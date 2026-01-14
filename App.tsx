@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { User, UserRole } from './types';
 import Sidebar from './components/Sidebar';
@@ -6,17 +7,14 @@ import News from './components/News';
 import Downloads from './components/Downloads';
 import Tickets from './components/Tickets';
 
-/**
- * Fix: Modified the global declaration to use the same modifiers (optional ?)
- * and inline the definition to avoid duplicate type identifier errors when merging 
- * with existing environment declarations.
- */
+// Fix: Moved AIStudio interface inside declare global and made property optional to avoid modifier/type mismatch errors
 declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
   interface Window {
-    aistudio?: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
+    aistudio?: AIStudio;
   }
 }
 
@@ -35,11 +33,16 @@ const decodeJwt = (token: string) => {
 };
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  // Restore token from session storage on initial load
+  // Restore both user and token from session storage to maintain seamless state
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = sessionStorage.getItem('js_portal_user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('js_access_token'));
+  
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isAuthorizingEcosystem, setIsAuthorizingEcosystem] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
 
@@ -53,12 +56,14 @@ const App: React.FC = () => {
     setUser(null);
     setAccessToken(null);
     sessionStorage.removeItem('js_access_token');
+    sessionStorage.removeItem('js_portal_user');
   };
 
-  const requestEcosystemAccess = useCallback(() => {
+  const requestEcosystemAccess = useCallback((isSilent: boolean = true) => {
     if (tokenClientRef.current) {
-      // Use prompt: '' to reuse existing session/consent without a forced popup if possible
-      tokenClientRef.current.requestAccessToken({ prompt: '' });
+      setIsAuthorizingEcosystem(true);
+      // prompt: '' attempts a silent refresh/auth if the user has already consented
+      tokenClientRef.current.requestAccessToken({ prompt: isSilent ? '' : 'consent' });
     } else {
       console.warn("Token client not initialized yet.");
     }
@@ -79,26 +84,26 @@ const App: React.FC = () => {
           assignedRole = UserRole.MANAGER;
         }
 
-        setUser({
+        const newUser: User = {
           id: payload.sub,
           name: payload.name,
           email: payload.email,
           role: assignedRole,
           avatar: payload.picture
-        });
+        };
         
-        // Single Phase flow: Trigger Ecosystem authorization immediately after SSO Identity check
-        // if we don't already have a valid access token in session
-        if (!accessToken) {
-          requestEcosystemAccess();
-        }
+        setUser(newUser);
+        sessionStorage.setItem('js_portal_user', JSON.stringify(newUser));
+        
+        // Single Phase flow: Trigger Ecosystem authorization immediately
+        requestEcosystemAccess(true);
       }
     } catch (err) {
       setAuthError("Identity verification failed. Please use your official JS Bank account.");
     } finally {
       setIsLoggingIn(false);
     }
-  }, [requestEcosystemAccess, accessToken]);
+  }, [requestEcosystemAccess]);
 
   // Initialize Token Client once
   useEffect(() => {
@@ -110,6 +115,7 @@ const App: React.FC = () => {
           client_id: GOOGLE_CLIENT_ID,
           scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/tasks.readonly https://www.googleapis.com/auth/calendar.readonly',
           callback: (tokenRes: any) => {
+            setIsAuthorizingEcosystem(false);
             if (tokenRes.access_token) {
               setAccessToken(tokenRes.access_token);
               sessionStorage.setItem('js_access_token', tokenRes.access_token);
@@ -117,16 +123,18 @@ const App: React.FC = () => {
           },
         });
         isTokenClientInitRef.current = true;
+        
+        // If we already have a user but no token (or just re-loading), try a silent refresh immediately
+        if (user && !accessToken) {
+          requestEcosystemAccess(true);
+        }
       } else {
         setTimeout(initClient, 500);
       }
     };
     initClient();
-  }, [GOOGLE_CLIENT_ID]);
+  }, [GOOGLE_CLIENT_ID, user, accessToken, requestEcosystemAccess]);
 
-  /**
-   * Fix: Checking for API Key selection on mount following Gemini Guidelines
-   */
   useEffect(() => {
     const checkKey = async () => {
       if (window.aistudio) {
@@ -143,10 +151,6 @@ const App: React.FC = () => {
     checkKey();
   }, []);
 
-  /**
-   * Fix: Triggering key selection dialog and assuming success to avoid race condition 
-   * as per @google/genai guidelines.
-   */
   const handleKeySelection = async () => {
     if (window.aistudio) {
       try {
@@ -197,20 +201,6 @@ const App: React.FC = () => {
           <p className="text-slate-500 mb-8 text-lg font-medium leading-relaxed">
             The JS Bank Portal requires an active Project Key to initialize corporate AI security and search services.
           </p>
-          
-          <div className="mb-10 p-5 bg-blue-50 rounded-2xl border border-blue-100 text-left text-xs text-blue-800 space-y-2">
-            <p className="font-black uppercase tracking-widest text-[10px]">Mandatory Billing Requirement:</p>
-            <p>Users must select an API key from a paid GCP project. Please ensure your project has billing enabled.</p>
-            <a 
-              href="https://ai.google.dev/gemini-api/docs/billing" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="inline-block font-black text-blue-600 hover:underline mt-1"
-            >
-              View Billing Documentation →
-            </a>
-          </div>
-
           <button 
             onClick={handleKeySelection}
             className="w-full py-5 bg-blue-600 text-white font-black rounded-[2rem] hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 uppercase tracking-widest text-sm"
@@ -274,7 +264,14 @@ const App: React.FC = () => {
           </div>
         </header>
         <div className="max-w-7xl mx-auto">
-          {activeTab === 'dashboard' && <Dashboard user={user} accessToken={accessToken} onSyncRequest={requestEcosystemAccess} />}
+          {activeTab === 'dashboard' && (
+            <Dashboard 
+              user={user} 
+              accessToken={accessToken} 
+              isAuthorizing={isAuthorizingEcosystem} 
+              onSyncRequest={() => requestEcosystemAccess(false)} 
+            />
+          )}
           {activeTab === 'news' && <News />}
           {activeTab === 'downloads' && <Downloads userRole={user.role} />}
           {activeTab === 'tickets' && <Tickets user={user} />}
