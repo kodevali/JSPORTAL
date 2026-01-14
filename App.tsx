@@ -7,6 +7,7 @@ import News from './components/News';
 import Downloads from './components/Downloads';
 import Tickets from './components/Tickets';
 import Logo from './components/Logo';
+import AIAssistant from './components/AIAssistant';
 
 declare global {
   interface AIStudio {
@@ -111,12 +112,10 @@ const App: React.FC = () => {
     }
   }, [requestEcosystemAccess]);
 
-  // Direct SSO Initialization
   useEffect(() => {
     const checkGsiReady = () => {
       const g = (window as any).google;
       if (g?.accounts?.id && g?.accounts?.oauth2) {
-        // Init Identity Services
         g.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleGoogleResponse,
@@ -133,7 +132,6 @@ const App: React.FC = () => {
           });
         }
 
-        // Init OAuth Token Client
         if (!tokenClientRef.current) {
           tokenClientRef.current = g.accounts.oauth2.initTokenClient({
             client_id: GOOGLE_CLIENT_ID,
@@ -190,7 +188,7 @@ const App: React.FC = () => {
 
   if (hasApiKey === null) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0F172A] flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-white/10 border-t-[#044A8D] rounded-full animate-spin"></div>
       </div>
     );
@@ -198,18 +196,18 @@ const App: React.FC = () => {
 
   if (!hasApiKey) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-12 max-w-lg w-full shadow-2xl text-center border border-transparent dark:border-slate-800 transition-colors">
+      <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 max-w-lg w-full shadow-2xl text-center border border-white/10 transition-colors">
           <Logo className="mb-10" />
-          <h1 className="text-2xl font-black text-[#044A8D] dark:text-white mb-4 uppercase tracking-tighter text-center">Security Protocol Required</h1>
-          <p className="text-slate-700 dark:text-slate-300 mb-8 text-sm font-bold leading-relaxed text-center">
+          <h1 className="text-2xl font-black text-[#044A8D] dark:text-white mb-4 uppercase tracking-tighter">Security Protocol</h1>
+          <p className="text-slate-700 dark:text-slate-300 mb-8 text-sm font-bold leading-relaxed">
             Portal initialization requires a verified AI Project Key to enable bank-wide intelligence protocols.
           </p>
           <button 
             onClick={handleKeySelection}
-            className="w-full py-4 bg-[#044A8D] text-white font-black rounded-xl hover:bg-blue-800 transition-all shadow-xl shadow-blue-100 dark:shadow-none active:scale-95 uppercase tracking-widest text-xs"
+            className="w-full py-5 bg-[#044A8D] text-white font-black rounded-2xl hover:bg-blue-800 transition-all shadow-xl shadow-blue-100 dark:shadow-none active:scale-95 uppercase tracking-widest text-xs"
           >
-            Authenticate Key
+            Authenticate Environment
           </button>
         </div>
       </div>
@@ -218,13 +216,13 @@ const App: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 max-w-lg w-full shadow-2xl text-center relative overflow-hidden animate-fadeIn border border-transparent dark:border-slate-800 transition-colors">
-          <div className="absolute top-0 left-0 w-full h-2 bg-[#EF7A25]"></div>
+      <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-[3.5rem] p-12 max-w-lg w-full shadow-2xl text-center relative overflow-hidden animate-fadeIn border border-white/10">
+          <div className="absolute top-0 left-0 w-full h-3 bg-[#EF7A25]"></div>
           <div className="mb-10">
-            <Logo className="mb-8" />
-            <h1 className="text-3xl font-black text-[#044A8D] dark:text-white mb-1 text-center">JS Intranet Portal</h1>
-            <p className="text-[#EF7A25] font-black uppercase tracking-[0.3em] text-[9px] text-center">Corporate Access Control</p>
+            <Logo className="mb-10 scale-125" />
+            <h1 className="text-4xl font-black text-[#044A8D] dark:text-white mb-1 tracking-tighter">Intranet Hub</h1>
+            <p className="text-[#EF7A25] font-black uppercase tracking-[0.4em] text-[10px]">Corporate Terminal Access</p>
           </div>
           <div className="flex flex-col items-center space-y-6">
             <div id="google-signin-btn" className="min-h-[50px]"></div>
@@ -233,14 +231,14 @@ const App: React.FC = () => {
                 {authError}
               </div>
             )}
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed font-bold uppercase tracking-widest text-center">
-              Employee Single Sign-On • Domain Restricted
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed font-bold uppercase tracking-widest">
+              Standard Bank Credentials Required
             </p>
           </div>
           {isLoggingIn && (
-            <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center z-50">
-              <div className="w-10 h-10 border-4 border-[#044A8D] border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-8 text-[#044A8D] dark:text-[#FAB51D] font-black tracking-widest text-xs uppercase animate-pulse">Verifying Credentials...</p>
+            <div className="absolute inset-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center z-50">
+              <div className="w-12 h-12 border-4 border-[#044A8D] border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-8 text-[#044A8D] dark:text-[#FAB51D] font-black tracking-widest text-xs uppercase animate-pulse">Establishing Session...</p>
             </div>
           )}
         </div>
@@ -249,7 +247,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-[#0F172A] transition-colors duration-300">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-[#0F172A] transition-colors duration-500 selection:bg-[#EF7A25]/30">
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -257,22 +255,22 @@ const App: React.FC = () => {
         darkMode={darkMode}
         toggleDarkMode={() => setDarkMode(!darkMode)}
       />
-      <main className="flex-1 ml-64 p-8 transition-all duration-300">
-        <header className="flex justify-end items-center mb-8">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 bg-white dark:bg-[#1E293B] pl-1.5 pr-6 py-1.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-               <img src={user.avatar} className="w-10 h-10 rounded-xl object-cover border border-slate-100 dark:border-slate-700 shadow-inner" alt="User" referrerPolicy="no-referrer" />
+      <main className="flex-1 lg:ml-80 ml-32 p-12 transition-all duration-500">
+        <header className="flex justify-end items-center mb-16">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-5 bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-xl pl-2 pr-10 py-2 rounded-[2rem] shadow-xl border border-white/20 transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98]">
+               <img src={user.avatar} className="w-12 h-12 rounded-2xl object-cover border-2 border-white dark:border-slate-700 shadow-xl" alt="Profile" referrerPolicy="no-referrer" />
                <div className="text-left">
-                 <p className="text-xs font-black text-slate-900 dark:text-white leading-none truncate max-w-[120px]">{user.name}</p>
-                 <p className="text-[8px] text-[#EF7A25] font-black uppercase tracking-widest mt-1.5">{user.role.replace('_', ' ')}</p>
+                 <p className="text-base font-black text-slate-900 dark:text-white leading-tight truncate max-w-[160px] tracking-tight">{user.name}</p>
+                 <p className="text-[10px] text-[#EF7A25] font-black uppercase tracking-[0.2em] mt-1.5">{user.role.replace('_', ' ')}</p>
                </div>
             </div>
-            <button onClick={logout} className="p-3 bg-white dark:bg-[#1E293B] text-slate-500 hover:text-red-600 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:bg-red-50 dark:hover:bg-red-950/30">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            <button onClick={logout} className="p-5 bg-white dark:bg-[#1E293B] text-slate-400 hover:text-red-500 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl transition-all hover:scale-110 active:scale-95 group">
+              <svg className="w-7 h-7 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
         </header>
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-[1400px] mx-auto">
           {activeTab === 'dashboard' && (
             <Dashboard 
               user={user} 
@@ -286,6 +284,9 @@ const App: React.FC = () => {
           {activeTab === 'tickets' && <Tickets user={user} />}
         </div>
       </main>
+      
+      {/* Universal Personal AI Assistant Overlay */}
+      <AIAssistant />
     </div>
   );
 };

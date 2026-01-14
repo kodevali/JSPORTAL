@@ -9,7 +9,24 @@ const getAIInstance = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-// Fix: Simplified content generation following guidelines
+// High-reasoning thinking mode for complex banking/strategic queries
+export const getDeepThinkingResponse = async (prompt: string) => {
+  try {
+    const ai = getAIInstance();
+    const response = await ai.models.generateContent({
+      model: "gemini-3-pro-preview",
+      contents: prompt,
+      config: {
+        thinkingConfig: { thinkingBudget: 32768 }
+      },
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Thinking mode failure:", error);
+    return "Technical error in deep-reasoning module. Falling back to standard response.";
+  }
+};
+
 export const getAITicketSuggestions = async (subject: string, description: string) => {
   try {
     const ai = getAIInstance();
@@ -24,7 +41,6 @@ export const getAITicketSuggestions = async (subject: string, description: strin
   }
 };
 
-// Fix: Simplified content generation following guidelines
 export const getPersonalizedGreeting = async (name: string, role: string) => {
   try {
     const ai = getAIInstance();
@@ -38,7 +54,6 @@ export const getPersonalizedGreeting = async (name: string, role: string) => {
   }
 };
 
-// Fix: Added responseSchema and grounding sources extraction as required by guidelines
 export const getLatestBankNews = async () => {
   try {
     const ai = getAIInstance();
@@ -74,11 +89,9 @@ export const getLatestBankNews = async () => {
     let articles = [];
     const text = response.text || "";
     try {
-      // Direct parsing of text property
       const parsed = JSON.parse(text.trim());
       articles = parsed.articles || [];
     } catch (e) {
-      // Fallback: search for JSON block in case search grounding adds markdown wrapper
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
@@ -88,16 +101,14 @@ export const getLatestBankNews = async () => {
       }
     }
     
-    // Extract search sources as required by guidelines
     const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     return { articles, sources };
   } catch (error) {
     console.warn("Real-time news feed restricted:", error);
-    return null; // Component will fall back to static constants
+    return null; 
   }
 };
 
-// Fix: Added responseSchema and grounding sources extraction
 export const getCurrentWeather = async (lat: number, lon: number) => {
   try {
     const ai = getAIInstance();
