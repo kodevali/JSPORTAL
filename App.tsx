@@ -7,6 +7,17 @@ import News from './components/News';
 import Downloads from './components/Downloads';
 import Tickets from './components/Tickets';
 
+// Define the expected shape of the AIStudio global if not fully typed
+// Fix: Merged into Window interface directly to avoid declaration conflicts
+declare global {
+  interface Window {
+    aistudio: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}
+
 const decodeJwt = (token: string) => {
   try {
     const base64Url = token.split('.')[1];
@@ -27,12 +38,46 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null); // Use null for initial check state
 
-  // Using the primary Client ID provided for the JS Portal
   const GOOGLE_CLIENT_ID = "936145652014-tq1mdn7q8gj2maa677vi2e1k13o0ub4b.apps.googleusercontent.com"; 
 
+  // Fix: Added missing logout function
+  const logout = () => {
+    setUser(null);
+    setAccessToken(null);
+    sessionStorage.removeItem('js_access_token');
+  };
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio) {
+        try {
+          const result = await window.aistudio.hasSelectedApiKey();
+          setHasApiKey(result);
+        } catch (e) {
+          setHasApiKey(false);
+        }
+      } else {
+        // If not in aistudio environment, assume key is provided via other means
+        setHasApiKey(true);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleKeySelection = async () => {
+    if (window.aistudio) {
+      try {
+        await window.aistudio.openSelectKey();
+        setHasApiKey(true);
+      } catch (err) {
+        console.error("Key selection failed:", err);
+      }
+    }
+  };
+
   const requestEcosystemAccess = useCallback(() => {
-    /* global google */
     if (typeof window !== 'undefined' && (window as any).google) {
       try {
         const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
@@ -45,7 +90,6 @@ const App: React.FC = () => {
             }
           },
         });
-        // We request consent to ensure all scopes (Gmail, Tasks, Calendar) are authorized by the user
         tokenClient.requestAccessToken({ prompt: 'consent' });
       } catch (err) {
         console.error("Token client failed:", err);
@@ -56,18 +100,14 @@ const App: React.FC = () => {
   const handleGoogleResponse = useCallback((response: any) => {
     setIsLoggingIn(true);
     setAuthError(null);
-    
     try {
       const payload = decodeJwt(response.credential);
       if (payload && payload.email) {
         const email = payload.email.toLowerCase();
         let assignedRole: UserRole = UserRole.USER;
-
-        // Simple role check based on provided IT account
         if (email.includes('admin') || email === 'kodev.ali@jsbl.com') {
           assignedRole = UserRole.IT;
         } 
-
         setUser({
           id: payload.sub,
           name: payload.name,
@@ -75,89 +115,86 @@ const App: React.FC = () => {
           role: assignedRole,
           avatar: payload.picture
         });
-        
-        // Trigger the second-step OAuth flow for Google Ecosystem data
         requestEcosystemAccess();
       }
     } catch (err) {
-      setAuthError("Identity verification failed. Please check your JSBL account.");
+      setAuthError("Identity verification failed. Please use your official JS Bank account.");
     } finally {
       setIsLoggingIn(false);
     }
   }, [requestEcosystemAccess]);
 
   useEffect(() => {
-    /* global google */
-    const initGoogleAuth = () => {
-      if (typeof window !== 'undefined' && (window as any).google) {
-        try {
-          (window as any).google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleGoogleResponse,
-            auto_select: false,
+    if (!hasApiKey || user) return;
+    const timer = setTimeout(() => {
+      if ((window as any).google) {
+        (window as any).google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleResponse,
+        });
+        const btn = document.getElementById("google-signin-btn");
+        if (btn) {
+          (window as any).google.accounts.id.renderButton(btn, {
+            theme: "outline", size: "large", width: 320, shape: "pill"
           });
-
-          const btn = document.getElementById("google-signin-btn");
-          if (btn) {
-            (window as any).google.accounts.id.renderButton(btn, {
-              theme: "outline", 
-              size: "large", 
-              width: 320, 
-              text: "signin_with", 
-              shape: "pill"
-            });
-          }
-        } catch (err) {
-          console.error("GSI Initialization failed:", err);
         }
       }
-    };
-
-    const timer = setTimeout(initGoogleAuth, 800);
+    }, 1000);
     return () => clearTimeout(timer);
-  }, [handleGoogleResponse, GOOGLE_CLIENT_ID]);
+  }, [hasApiKey, handleGoogleResponse, GOOGLE_CLIENT_ID, user]);
 
-  const logout = () => {
-    setUser(null);
-    setAccessToken(null);
-    sessionStorage.removeItem('js_access_token');
-  };
+  if (hasApiKey === null) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-white/20 border-t-blue-600 rounded-full animate-spin"></div>
+    </div>;
+  }
+
+  if (!hasApiKey) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-[3rem] p-12 max-w-lg w-full shadow-2xl text-center border border-white/10">
+          <div className="w-20 h-20 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-white text-4xl font-black shadow-2xl mb-8">JS</div>
+          <h1 className="text-3xl font-black text-slate-900 mb-4">Secure Boot Required</h1>
+          <p className="text-slate-500 mb-10 text-lg font-medium leading-relaxed">
+            The JS Bank Portal requires an active Project Key to initialize corporate AI security and search services.
+          </p>
+          <button 
+            onClick={handleKeySelection}
+            className="w-full py-5 bg-blue-600 text-white font-black rounded-[2rem] hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 uppercase tracking-widest text-sm"
+          >
+            Authenticate Portal Key
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-[2.5rem] p-10 max-w-lg w-full shadow-2xl relative overflow-hidden text-center animate-fadeIn border border-white/10">
+        <div className="bg-white rounded-[3rem] p-12 max-w-lg w-full shadow-2xl text-center relative overflow-hidden animate-fadeIn">
           <div className="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
-          
-          <div className="mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center text-white text-3xl font-bold shadow-xl mb-6">JS</div>
-            <h1 className="text-3xl font-black text-slate-900 mb-1">JS Bank Portal</h1>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Secure Employee Gateway</p>
+          <div className="mb-10">
+            <div className="w-20 h-20 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-white text-4xl font-black shadow-2xl mb-8">JS</div>
+            <h1 className="text-4xl font-black text-slate-900 mb-2">Internal Portal</h1>
+            <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Employee Access Point</p>
           </div>
-
-          <div className="flex flex-col items-center space-y-6">
+          <div className="flex flex-col items-center space-y-8">
             <div id="google-signin-btn" className="min-h-[50px]"></div>
-            
             {authError && (
-              <div className="w-full p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 flex items-center space-x-3">
+              <div className="w-full p-5 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 flex items-center space-x-3 text-left">
                 <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                 <span>{authError}</span>
               </div>
             )}
-            
-            <p className="text-[11px] text-slate-400 max-w-sm leading-relaxed">
-              Login with your official bank credentials. You will be asked to authorize access to your professional Gmail, Tasks, and Calendar.
+            <p className="text-xs text-slate-400 max-w-xs leading-relaxed font-medium">
+              By signing in, you agree to the JS Bank Acceptable Use Policy and Information Security Guidelines.
             </p>
           </div>
-
-          <div className="mt-12 pt-8 border-t border-slate-50">
-             <p className="text-[10px] text-slate-300 font-medium tracking-wide">© 2024 JS BANK LTD. ALL RIGHTS RESERVED.</p>
-          </div>
-
           {isLoggingIn && (
-            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center z-50">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-6 text-slate-900 font-bold">Verifying JSBL Identity...</p>
+              <p className="mt-8 text-slate-900 font-black tracking-tight text-lg">JSBL IDENTITY AUTHENTICATION...</p>
             </div>
           )}
         </div>
@@ -171,26 +208,20 @@ const App: React.FC = () => {
       <main className="flex-1 ml-64 p-8 lg:p-12 transition-all duration-300">
         <header className="flex justify-end items-center mb-10">
           <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-3 bg-white p-2 pr-6 rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-               <img src={user.avatar} className="w-10 h-10 rounded-xl object-cover shadow-sm border border-slate-200" alt="User" referrerPolicy="no-referrer" />
+            <div className="flex items-center space-x-4 bg-white p-2 pr-8 rounded-[2rem] shadow-sm border border-slate-100 transition-all hover:shadow-md">
+               <img src={user.avatar} className="w-12 h-12 rounded-2xl object-cover shadow-sm border border-slate-200" alt="User" referrerPolicy="no-referrer" />
                <div className="text-left">
-                 <p className="text-sm font-bold text-slate-900 leading-none">{user.name}</p>
-                 <p className="text-[10px] text-blue-600 font-black uppercase tracking-wider mt-1">{user.role.replace('_', ' ')}</p>
+                 <p className="text-sm font-black text-slate-900 leading-none">{user.name}</p>
+                 <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mt-1.5">{user.role.replace('_', ' ')}</p>
                </div>
             </div>
-            <button onClick={logout} className="p-3 bg-white text-slate-400 hover:text-red-600 rounded-2xl border border-slate-100 shadow-sm transition-all hover:bg-red-50 group">
+            <button onClick={logout} className="p-4 bg-white text-slate-400 hover:text-red-600 rounded-2xl border border-slate-100 shadow-sm transition-all hover:bg-red-50 group">
               <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
         </header>
         <div className="max-w-7xl mx-auto">
-          {activeTab === 'dashboard' && (
-            <Dashboard 
-              user={user} 
-              accessToken={accessToken} 
-              onSyncRequest={requestEcosystemAccess}
-            />
-          )}
+          {activeTab === 'dashboard' && <Dashboard user={user} accessToken={accessToken} onSyncRequest={requestEcosystemAccess} />}
           {activeTab === 'news' && <News />}
           {activeTab === 'downloads' && <Downloads userRole={user.role} />}
           {activeTab === 'tickets' && <Tickets user={user} />}

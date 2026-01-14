@@ -5,13 +5,20 @@ import { MOCK_NEWS } from '../constants';
 
 const News: React.FC = () => {
   const [news, setNews] = useState<any[]>([]);
+  const [sources, setSources] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchNews = async () => {
       setLoading(true);
-      const items = await getLatestBankNews();
-      setNews(items || MOCK_NEWS); // Use mocks as fallback if AI fetch fails
+      const res = await getLatestBankNews();
+      if (res && res.articles && res.articles.length > 0) {
+        setNews(res.articles);
+        setSources(res.sources);
+      } else {
+        setNews(MOCK_NEWS);
+        setSources([]);
+      }
       setLoading(false);
     };
     fetchNews();
@@ -72,6 +79,26 @@ const News: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Grounding Sources extraction - Required by Gemini Guidelines */}
+      {sources.length > 0 && (
+        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Verified Sources via Google Search</h3>
+          <div className="flex flex-wrap gap-2">
+            {sources.map((source, i) => source.web && (
+              <a 
+                key={i} 
+                href={source.web.uri} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-slate-100 transition-all"
+              >
+                {source.web.title || source.web.uri}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Corporate Communications Banner */}
       <div className="bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden shadow-2xl">

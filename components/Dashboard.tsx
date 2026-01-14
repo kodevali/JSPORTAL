@@ -17,7 +17,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, onSyncRequest 
   const [tasks, setTasks] = useState<any[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [loadingEcosystem, setLoadingEcosystem] = useState(false);
-  const [weather, setWeather] = useState({ temp: "28°C", desc: "Clear Sky", emoji: "☀️" });
+  const [weather, setWeather] = useState({ temp: "28°C", desc: "Clear Sky", emoji: "☀️", sources: [] as any[] });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,7 +74,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, onSyncRequest 
         </div>
         
         <div className="flex items-center space-x-4">
-          <div className="bg-white px-8 py-4 rounded-[2.5rem] shadow-sm border border-slate-100 flex items-center space-x-6">
+          <div className="bg-white px-8 py-4 rounded-[2.5rem] shadow-sm border border-slate-100 flex items-center space-x-6 relative group">
             <div className="text-right">
               <p className="text-3xl font-black text-slate-900 tracking-tighter leading-none">{time}</p>
               <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mt-1">Karachi, Pakistan</p>
@@ -83,6 +83,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, onSyncRequest 
                <span className="text-2xl mb-1">{weather.emoji}</span>
                <span className="text-xs font-bold text-slate-700">{weather.temp}</span>
             </div>
+            {/* Grounding sources for weather - Mandatory by guidelines */}
+            {weather.sources && weather.sources.length > 0 && (
+              <div className="absolute top-full right-0 mt-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-3 rounded-xl shadow-xl border border-slate-100 z-30 min-w-[200px]">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Weather verified via</p>
+                <div className="space-y-1">
+                  {weather.sources.map((s, i) => s.web && (
+                    <a key={i} href={s.web.uri} target="_blank" rel="noopener noreferrer" className="block text-[10px] text-blue-600 truncate hover:underline">
+                      {s.web.title || s.web.uri}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
