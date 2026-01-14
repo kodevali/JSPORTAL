@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserRole } from '../types';
 
@@ -17,9 +16,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
   ];
 
   return (
-    <div className="w-64 bg-slate-900 h-screen flex flex-col fixed left-0 top-0 text-white shadow-xl z-20 transition-all duration-300">
+    <div className="w-64 bg-slate-900 h-screen flex flex-col fixed left-0 top-0 text-white shadow-xl z-20">
       <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
-        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xl">JS</div>
+        <div className="w-10 h-10 bg-[#044A8D] rounded-lg flex items-center justify-center font-bold text-xl">JS</div>
         <span className="text-xl font-bold tracking-tight">JS Portal</span>
       </div>
       <nav className="flex-1 mt-6 px-4 space-y-2">
@@ -29,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
             onClick={() => setActiveTab(tab.id)}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
               activeTab === tab.id 
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' 
+                ? 'bg-[#044A8D] text-white shadow-lg' 
                 : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
           >
@@ -42,8 +41,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role }) => {
       </nav>
       <div className="p-4 border-t border-slate-800">
         <div className="bg-slate-800/50 rounded-xl p-4">
-          <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Current Role</p>
-          <p className="text-sm font-semibold text-blue-400">{role.replace('_', ' ')}</p>
+          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Authenticated Access</p>
+          <p className="text-sm font-semibold text-[#FAB51D]">{role.replace('_', ' ')}</p>
         </div>
       </div>
     </div>

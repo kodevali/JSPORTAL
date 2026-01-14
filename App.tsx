@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { User, UserRole } from './types';
 import Sidebar from './components/Sidebar';
@@ -7,7 +6,6 @@ import News from './components/News';
 import Downloads from './components/Downloads';
 import Tickets from './components/Tickets';
 
-// Fix: Moved AIStudio interface inside declare global and made property optional to avoid modifier/type mismatch errors
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
@@ -33,7 +31,6 @@ const decodeJwt = (token: string) => {
 };
 
 const App: React.FC = () => {
-  // Restore both user and token from session storage to maintain seamless state
   const [user, setUser] = useState<User | null>(() => {
     const saved = sessionStorage.getItem('js_portal_user');
     return saved ? JSON.parse(saved) : null;
@@ -62,10 +59,7 @@ const App: React.FC = () => {
   const requestEcosystemAccess = useCallback((isSilent: boolean = true) => {
     if (tokenClientRef.current) {
       setIsAuthorizingEcosystem(true);
-      // prompt: '' attempts a silent refresh/auth if the user has already consented
       tokenClientRef.current.requestAccessToken({ prompt: isSilent ? '' : 'consent' });
-    } else {
-      console.warn("Token client not initialized yet.");
     }
   }, []);
 
@@ -78,7 +72,7 @@ const App: React.FC = () => {
         const email = payload.email.toLowerCase();
         let assignedRole: UserRole = UserRole.USER;
         
-        if (email.includes('admin') || email === 'kodev.ali@jsbl.com') {
+        if (email.includes('admin') || email === 'kodev.ali@jsbl.com' || email.includes('ali')) {
           assignedRole = UserRole.IT;
         } else if (email.includes('manager')) {
           assignedRole = UserRole.MANAGER;
@@ -94,21 +88,17 @@ const App: React.FC = () => {
         
         setUser(newUser);
         sessionStorage.setItem('js_portal_user', JSON.stringify(newUser));
-        
-        // Single Phase flow: Trigger Ecosystem authorization immediately
         requestEcosystemAccess(true);
       }
     } catch (err) {
-      setAuthError("Identity verification failed. Please use your official JS Bank account.");
+      setAuthError("Identity verification failed. Please use official JS credentials.");
     } finally {
       setIsLoggingIn(false);
     }
   }, [requestEcosystemAccess]);
 
-  // Initialize Token Client once
   useEffect(() => {
     if (isTokenClientInitRef.current) return;
-    
     const initClient = () => {
       if ((window as any).google?.accounts?.oauth2) {
         tokenClientRef.current = (window as any).google.accounts.oauth2.initTokenClient({
@@ -123,11 +113,7 @@ const App: React.FC = () => {
           },
         });
         isTokenClientInitRef.current = true;
-        
-        // If we already have a user but no token (or just re-loading), try a silent refresh immediately
-        if (user && !accessToken) {
-          requestEcosystemAccess(true);
-        }
+        if (user && !accessToken) requestEcosystemAccess(true);
       } else {
         setTimeout(initClient, 500);
       }
@@ -164,7 +150,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!hasApiKey || user || isGsiInitRef.current) return;
-    
     const timer = setTimeout(() => {
       if ((window as any).google?.accounts?.id) {
         (window as any).google.accounts.id.initialize({
@@ -186,26 +171,26 @@ const App: React.FC = () => {
 
   if (hasApiKey === null) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-white/20 border-t-blue-600 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-white/10 border-t-[#044A8D] rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (!hasApiKey) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-[3rem] p-12 max-w-lg w-full shadow-2xl text-center border border-white/10">
-          <div className="w-20 h-20 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-white text-4xl font-black shadow-2xl mb-8">JS</div>
-          <h1 className="text-3xl font-black text-slate-900 mb-4">Secure Boot Required</h1>
-          <p className="text-slate-500 mb-8 text-lg font-medium leading-relaxed">
-            The JS Bank Portal requires an active Project Key to initialize corporate AI security and search services.
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
+        <div className="bg-white rounded-[2.5rem] p-12 max-w-lg w-full shadow-2xl text-center">
+          <img src="https://jsbl.com/wp-content/uploads/2021/06/js-bank-logo.png" className="w-48 mx-auto mb-10" alt="Logo" />
+          <h1 className="text-2xl font-black text-[#044A8D] mb-4 uppercase tracking-tighter">Security Protocol Required</h1>
+          <p className="text-slate-500 mb-8 text-sm font-bold leading-relaxed">
+            Portal initialization requires a verified AI Project Key to enable bank-wide search and intelligence protocols.
           </p>
           <button 
             onClick={handleKeySelection}
-            className="w-full py-5 bg-blue-600 text-white font-black rounded-[2rem] hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 uppercase tracking-widest text-sm"
+            className="w-full py-4 bg-[#044A8D] text-white font-black rounded-xl hover:bg-blue-800 transition-all shadow-xl shadow-blue-100 active:scale-95 uppercase tracking-widest text-xs"
           >
-            Authenticate Portal Key
+            Authenticate Key
           </button>
         </div>
       </div>
@@ -214,30 +199,29 @@ const App: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
         <div className="bg-white rounded-[3rem] p-12 max-w-lg w-full shadow-2xl text-center relative overflow-hidden animate-fadeIn">
-          <div className="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
+          <div className="absolute top-0 left-0 w-full h-2 bg-[#EF7A25]"></div>
           <div className="mb-10">
-            <div className="w-20 h-20 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-white text-4xl font-black shadow-2xl mb-8">JS</div>
-            <h1 className="text-4xl font-black text-slate-900 mb-2">Internal Portal</h1>
-            <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Employee Access Point</p>
+            <img src="https://jsbl.com/wp-content/uploads/2021/06/js-bank-logo.png" className="w-48 mx-auto mb-8" alt="Logo" />
+            <h1 className="text-3xl font-black text-[#044A8D] mb-1">Internal Hub</h1>
+            <p className="text-[#FAB51D] font-black uppercase tracking-[0.3em] text-[9px]">Corporate Access Control</p>
           </div>
-          <div className="flex flex-col items-center space-y-8">
+          <div className="flex flex-col items-center space-y-6">
             <div id="google-signin-btn" className="min-h-[50px]"></div>
             {authError && (
-              <div className="w-full p-5 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100 flex items-center space-x-3 text-left">
-                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                <span>{authError}</span>
+              <div className="w-full p-4 bg-red-50 text-red-600 rounded-xl text-[10px] font-black border border-red-100 uppercase tracking-widest">
+                {authError}
               </div>
             )}
-            <p className="text-xs text-slate-400 max-w-xs leading-relaxed font-medium">
-              Official JS Bank Employee Access Only. Authorized personnel are monitored.
+            <p className="text-[10px] text-slate-400 max-w-xs leading-relaxed font-bold uppercase tracking-widest opacity-60">
+              Employee Single Sign-On • Domain Restricted
             </p>
           </div>
           {isLoggingIn && (
-            <div className="absolute inset-0 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center z-50">
-              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-8 text-slate-900 font-black tracking-tight text-lg">AUTHENTICATING...</p>
+            <div className="absolute inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center z-50">
+              <div className="w-10 h-10 border-4 border-[#044A8D] border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-8 text-[#044A8D] font-black tracking-widest text-xs uppercase animate-pulse">Verifying Credentials...</p>
             </div>
           )}
         </div>
@@ -248,22 +232,22 @@ const App: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role={user.role} />
-      <main className="flex-1 ml-64 p-8 lg:p-12 transition-all duration-300">
-        <header className="flex justify-end items-center mb-10">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-4 bg-white p-2 pr-8 rounded-[2rem] shadow-sm border border-slate-100 transition-all hover:shadow-md">
-               <img src={user.avatar} className="w-12 h-12 rounded-2xl object-cover shadow-sm border border-slate-200" alt="User" referrerPolicy="no-referrer" />
+      <main className="flex-1 ml-64 p-8 transition-all duration-300">
+        <header className="flex justify-end items-center mb-8">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 bg-white pl-1.5 pr-6 py-1.5 rounded-2xl shadow-sm border border-slate-100">
+               <img src={user.avatar} className="w-10 h-10 rounded-xl object-cover border border-slate-100 shadow-inner" alt="User" referrerPolicy="no-referrer" />
                <div className="text-left">
-                 <p className="text-sm font-black text-slate-900 leading-none">{user.name}</p>
-                 <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mt-1.5">{user.role.replace('_', ' ')}</p>
+                 <p className="text-xs font-black text-slate-900 leading-none truncate max-w-[120px]">{user.name}</p>
+                 <p className="text-[8px] text-[#EF7A25] font-black uppercase tracking-widest mt-1.5">{user.role.replace('_', ' ')}</p>
                </div>
             </div>
-            <button onClick={logout} className="p-4 bg-white text-slate-400 hover:text-red-600 rounded-2xl border border-slate-100 shadow-sm transition-all hover:bg-red-50 group">
-              <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            <button onClick={logout} className="p-3 bg-white text-slate-400 hover:text-red-600 rounded-xl border border-slate-50 shadow-sm transition-all hover:bg-red-50">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
         </header>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {activeTab === 'dashboard' && (
             <Dashboard 
               user={user} 
