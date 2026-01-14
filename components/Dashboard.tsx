@@ -154,12 +154,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-2">
           
-          {/* Directives - High Density List */}
+          {/* Gmail - High Density List */}
           <div className={`${cardBase} lg:col-span-7`}>
             <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
               <h2 className="text-[10px] font-black uppercase tracking-widest text-[#044A8D] dark:text-blue-400 flex items-center">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#EF7A25] mr-2"></span>
-                Directives
+                Gmail
               </h2>
               <span className="text-[8px] font-black uppercase text-slate-400">Secure</span>
             </div>
@@ -188,12 +188,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
           </div>
 
-          {/* Agenda - Slim Vertical Card */}
+          {/* Today's Agenda - Slim Vertical Card */}
           <div className={`${cardBase} lg:col-span-5 bg-[#044A8D] dark:bg-[#0F172A] border-none text-white`}>
             <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
               <h2 className="text-[10px] font-black uppercase tracking-widest flex items-center">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FAB51D] mr-2"></span>
-                Agenda
+                Today's Agenda
               </h2>
             </div>
             
