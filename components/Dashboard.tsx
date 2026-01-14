@@ -56,8 +56,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
       if (accessToken) {
         setLoadingEcosystem(true);
         try {
-          // GMAIL SYNC
-          const gmailListRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?q=label:IMPORTANT&maxResults=15', {
+          // GMAIL SYNC - Limited to Top 5 Important
+          const gmailListRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?q=label:IMPORTANT&maxResults=10', {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           const listData = await gmailListRes.json();
@@ -82,29 +82,32 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
                 };
               })
             );
-            setEmails(deduplicate(emailDetails, (e) => `${e.subject}-${e.from}-${e.date}`));
+            setEmails(deduplicate(emailDetails, (e) => `${e.subject}-${e.from}`).slice(0, 5));
           }
 
           // TASKS SYNC
-          const tasksRes = await fetch('https://tasks.googleapis.com/tasks/v1/lists/@default/tasks?maxResults=15', {
+          const tasksRes = await fetch('https://tasks.googleapis.com/tasks/v1/lists/@default/tasks?maxResults=10', {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           const tasksData = await tasksRes.json();
-          setTasks(deduplicate((tasksData.items || []), (t: any) => t.title));
+          setTasks(deduplicate((tasksData.items || []), (t: any) => t.title).slice(0, 5));
 
-          // CALENDAR SYNC
-          const calRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${new Date().toISOString()}&maxResults=50&singleEvents=true&orderBy=startTime`, {
+          // CALENDAR SYNC - Aggressive deduplication for birthdays/sync artifacts
+          const calRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${new Date().toISOString()}&maxResults=60&singleEvents=true&orderBy=startTime`, {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           const calData = await calRes.json();
           
-          // STRICT DEDUPLICATION: Group by summary and actual start date only to catch all sync variants.
-          setCalendarEvents(deduplicate((calData.items || []), (c: any) => {
-            const summary = (c.summary || 'untitled').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+          // FIX: ULTRA-STERN DEDUPLICATION - Prevents identical events on same day
+          const rawEvents = calData.items || [];
+          const processed = deduplicate(rawEvents, (c: any) => {
+            const title = (c.summary || 'untitled').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
             const rawStart = c.start.dateTime || c.start.date || '';
-            const dateOnly = rawStart.includes('T') ? rawStart.split('T')[0] : rawStart;
-            return `${summary}-${dateOnly}`;
-          }));
+            const dateStr = rawStart.includes('T') ? rawStart.split('T')[0] : rawStart;
+            return `${title}-${dateStr}`;
+          });
+          
+          setCalendarEvents(processed.slice(0, 5));
         } catch (err) {
           console.error("Workspace sync failure:", err);
         } finally {
@@ -174,16 +177,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4">
           
-          {/* Main Communications - Bento Grid Item */}
+          {/* Main Communications */}
           <div className={`${cardBase} lg:col-span-8 min-h-[450px]`}>
             <div className="px-10 py-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
               <div className="flex items-center space-x-4">
                 <div className="w-4 h-4 rounded-full bg-[#EF7A25] shadow-[0_0_15px_#EF7A25]"></div>
-                <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#044A8D] dark:text-blue-400">Communication Terminal</h2>
+                <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#044A8D] dark:text-blue-400">Important Directives</h2>
               </div>
               <div className="flex items-center space-x-2">
                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Encrypted</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Top 5 Secure</span>
               </div>
             </div>
             
@@ -204,7 +207,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
               ) : (
                 <div className="h-full flex flex-col items-center justify-center opacity-40">
                   <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
-                  <span className="text-xs font-black uppercase tracking-[0.4em]">Operational Queue Clear</span>
+                  <span className="text-xs font-black uppercase tracking-[0.4em]">Queue Clear</span>
                 </div>
               )}
             </div>
@@ -221,40 +224,33 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
           </div>
 
-          {/* Agenda Bento Card - Vertical Long */}
+          {/* Agenda Bento Card - Limited to 5 events */}
           <div className={`${cardBase} lg:col-span-4 min-h-[700px] h-full bg-[#044A8D] dark:bg-[#0F172A] border-none text-white shadow-[0_50px_100px_rgba(4,74,141,0.3)] relative lg:row-span-2`}>
-            {/* Visual Glassmorphism Accents */}
+            {/* Visual Accents */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#EF7A25]/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl pointer-events-none"></div>
             
             <div className="px-10 py-8 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 rounded-full bg-[#FAB51D] shadow-[0_0_15px_rgba(250,181,29,0.5)]"></div>
                 <h2 className="text-[12px] font-black uppercase tracking-[0.3em]">JS Agenda</h2>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Live</span>
-              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Verified</span>
             </div>
             
             <div className="flex-1 overflow-y-auto p-8 scrollbar-hide flex flex-col">
               
-              {/* COMPACT ALL-DAY SECTION - Fixes the space eating issue */}
+              {/* COMPACT ALL-DAY SECTION */}
               {allDayEvents.length > 0 && (
-                <div className="mb-8 p-6 bg-white/10 rounded-[2rem] border border-white/10 backdrop-blur-md">
-                   <div className="text-[9px] font-black uppercase tracking-[0.3em] text-blue-200 mb-4 flex items-center">
-                     <svg className="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" /></svg>
-                     Special Occasions Today
-                   </div>
-                   <div className="space-y-3">
-                     {allDayEvents.map(event => (
-                       <div key={event.id} className="flex items-center space-x-3 group">
-                         <div className="w-1.5 h-1.5 rounded-full bg-[#FAB51D]"></div>
-                         <span className="text-[13px] font-bold tracking-tight text-white group-hover:text-[#FAB51D] transition-colors line-clamp-1">{event.summary}</span>
-                       </div>
-                     ))}
-                   </div>
+                <div className="mb-6 space-y-2">
+                   {allDayEvents.map(event => (
+                     <div key={event.id} className="p-3 bg-white/10 rounded-2xl border border-white/5 backdrop-blur-md flex items-center space-x-3 group">
+                        <div className="w-2 h-2 rounded-full bg-[#FAB51D]"></div>
+                        <div className="flex-1">
+                          <p className="text-[9px] font-black text-blue-200 uppercase tracking-widest leading-none mb-1">Occasion</p>
+                          <span className="text-[12px] font-bold tracking-tight text-white group-hover:text-[#FAB51D] transition-colors line-clamp-1">{event.summary}</span>
+                        </div>
+                     </div>
+                   ))}
                 </div>
               )}
 
@@ -264,15 +260,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
                   <div className="relative border-l-2 border-white/10 ml-2 space-y-10 pb-6">
                     {timedEvents.map((event) => (
                       <div key={event.id} className="relative pl-10 group">
-                        {/* Timeline Node */}
                         <div className="absolute -left-[10px] top-1 w-4.5 h-4.5 rounded-full border-4 border-[#044A8D] dark:border-[#0F172A] bg-[#FAB51D] group-hover:scale-125 transition-transform shadow-[0_0_15px_#FAB51D]"></div>
                         
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-black text-blue-200 uppercase tracking-[0.2em]">{getTimeLabel(event)}</span>
-                            {event.status === 'confirmed' && (
-                              <span className="text-[8px] font-black bg-white/20 text-white px-2.5 py-1 rounded-full uppercase tracking-widest border border-white/10">Verified</span>
-                            )}
                           </div>
                           <h4 className="text-[15px] font-black leading-tight group-hover:text-[#FAB51D] transition-colors tracking-tight">{event.summary}</h4>
                           {event.location && (
@@ -288,7 +280,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
                 ) : !allDayEvents.length && (
                   <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20">
                      <svg className="w-20 h-20 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                     <span className="text-[12px] font-black uppercase tracking-[0.5em]">Schedule Empty</span>
+                     <span className="text-[12px] font-black uppercase tracking-[0.5em]">No Sessions</span>
                   </div>
                 )}
               </div>
@@ -306,13 +298,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
           </div>
 
-          {/* Metrics Card - Bento Grid Item */}
+          {/* Metrics Card */}
           <div className={`${cardBase} lg:col-span-4 h-[350px]`}>
             <div className="px-10 py-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
                <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#044A8D] dark:text-blue-400">HQ Resource Matrix</h2>
                <div className="flex items-center space-x-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Real-Time</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Live</span>
                </div>
             </div>
             <div className="flex-1 p-6 bg-slate-50/20 dark:bg-slate-900/20">
@@ -330,11 +322,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
           </div>
 
-          {/* Task Card - Bento Grid Item */}
+          {/* Task Card */}
           <div className={`${cardBase} lg:col-span-4 h-[350px]`}>
             <div className="px-10 py-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
                <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-[#044A8D] dark:text-blue-400">Operational Backlog</h2>
-               <div className="px-3 py-1 bg-[#EF7A25] text-white text-[10px] font-black rounded-lg shadow-lg shadow-orange-100 uppercase tracking-widest">{tasks.length} Items</div>
+               <div className="px-3 py-1 bg-[#EF7A25] text-white text-[10px] font-black rounded-lg shadow-lg shadow-orange-100 uppercase tracking-widest">{tasks.length}</div>
             </div>
             <div className="flex-1 overflow-y-auto p-8 space-y-3.5 custom-scroll scrollbar-hide">
               {tasks.length > 0 ? (
