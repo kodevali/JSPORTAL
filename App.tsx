@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { User, UserRole } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -7,11 +6,14 @@ import News from './components/News';
 import Downloads from './components/Downloads';
 import Tickets from './components/Tickets';
 
-// Define the expected shape of the AIStudio global if not fully typed
-// Fix: Merged into Window interface directly to avoid declaration conflicts
+/**
+ * Fix: Modified the global declaration to use the same modifiers (optional ?)
+ * and inline the definition to avoid duplicate type identifier errors when merging 
+ * with existing environment declarations.
+ */
 declare global {
   interface Window {
-    aistudio: {
+    aistudio?: {
       hasSelectedApiKey: () => Promise<boolean>;
       openSelectKey: () => Promise<void>;
     };
@@ -34,21 +36,97 @@ const decodeJwt = (token: string) => {
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  // Restore token from session storage on initial load
+  const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('js_access_token'));
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null); // Use null for initial check state
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
 
+  const tokenClientRef = useRef<any>(null);
+  const isGsiInitRef = useRef(false);
+  const isTokenClientInitRef = useRef(false);
+  
   const GOOGLE_CLIENT_ID = "936145652014-tq1mdn7q8gj2maa677vi2e1k13o0ub4b.apps.googleusercontent.com"; 
 
-  // Fix: Added missing logout function
   const logout = () => {
     setUser(null);
     setAccessToken(null);
     sessionStorage.removeItem('js_access_token');
   };
 
+  const requestEcosystemAccess = useCallback(() => {
+    if (tokenClientRef.current) {
+      // Use prompt: '' to reuse existing session/consent without a forced popup if possible
+      tokenClientRef.current.requestAccessToken({ prompt: '' });
+    } else {
+      console.warn("Token client not initialized yet.");
+    }
+  }, []);
+
+  const handleGoogleResponse = useCallback((response: any) => {
+    setIsLoggingIn(true);
+    setAuthError(null);
+    try {
+      const payload = decodeJwt(response.credential);
+      if (payload && payload.email) {
+        const email = payload.email.toLowerCase();
+        let assignedRole: UserRole = UserRole.USER;
+        
+        if (email.includes('admin') || email === 'kodev.ali@jsbl.com') {
+          assignedRole = UserRole.IT;
+        } else if (email.includes('manager')) {
+          assignedRole = UserRole.MANAGER;
+        }
+
+        setUser({
+          id: payload.sub,
+          name: payload.name,
+          email: payload.email,
+          role: assignedRole,
+          avatar: payload.picture
+        });
+        
+        // Single Phase flow: Trigger Ecosystem authorization immediately after SSO Identity check
+        // if we don't already have a valid access token in session
+        if (!accessToken) {
+          requestEcosystemAccess();
+        }
+      }
+    } catch (err) {
+      setAuthError("Identity verification failed. Please use your official JS Bank account.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  }, [requestEcosystemAccess, accessToken]);
+
+  // Initialize Token Client once
+  useEffect(() => {
+    if (isTokenClientInitRef.current) return;
+    
+    const initClient = () => {
+      if ((window as any).google?.accounts?.oauth2) {
+        tokenClientRef.current = (window as any).google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/tasks.readonly https://www.googleapis.com/auth/calendar.readonly',
+          callback: (tokenRes: any) => {
+            if (tokenRes.access_token) {
+              setAccessToken(tokenRes.access_token);
+              sessionStorage.setItem('js_access_token', tokenRes.access_token);
+            }
+          },
+        });
+        isTokenClientInitRef.current = true;
+      } else {
+        setTimeout(initClient, 500);
+      }
+    };
+    initClient();
+  }, [GOOGLE_CLIENT_ID]);
+
+  /**
+   * Fix: Checking for API Key selection on mount following Gemini Guidelines
+   */
   useEffect(() => {
     const checkKey = async () => {
       if (window.aistudio) {
@@ -59,13 +137,16 @@ const App: React.FC = () => {
           setHasApiKey(false);
         }
       } else {
-        // If not in aistudio environment, assume key is provided via other means
         setHasApiKey(true);
       }
     };
     checkKey();
   }, []);
 
+  /**
+   * Fix: Triggering key selection dialog and assuming success to avoid race condition 
+   * as per @google/genai guidelines.
+   */
   const handleKeySelection = async () => {
     if (window.aistudio) {
       try {
@@ -77,66 +158,22 @@ const App: React.FC = () => {
     }
   };
 
-  const requestEcosystemAccess = useCallback(() => {
-    if (typeof window !== 'undefined' && (window as any).google) {
-      try {
-        const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/tasks.readonly https://www.googleapis.com/auth/calendar.readonly',
-          callback: (tokenRes: any) => {
-            if (tokenRes.access_token) {
-              setAccessToken(tokenRes.access_token);
-              sessionStorage.setItem('js_access_token', tokenRes.access_token);
-            }
-          },
-        });
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-      } catch (err) {
-        console.error("Token client failed:", err);
-      }
-    }
-  }, [GOOGLE_CLIENT_ID]);
-
-  const handleGoogleResponse = useCallback((response: any) => {
-    setIsLoggingIn(true);
-    setAuthError(null);
-    try {
-      const payload = decodeJwt(response.credential);
-      if (payload && payload.email) {
-        const email = payload.email.toLowerCase();
-        let assignedRole: UserRole = UserRole.USER;
-        if (email.includes('admin') || email === 'kodev.ali@jsbl.com') {
-          assignedRole = UserRole.IT;
-        } 
-        setUser({
-          id: payload.sub,
-          name: payload.name,
-          email: payload.email,
-          role: assignedRole,
-          avatar: payload.picture
-        });
-        requestEcosystemAccess();
-      }
-    } catch (err) {
-      setAuthError("Identity verification failed. Please use your official JS Bank account.");
-    } finally {
-      setIsLoggingIn(false);
-    }
-  }, [requestEcosystemAccess]);
-
   useEffect(() => {
-    if (!hasApiKey || user) return;
+    if (!hasApiKey || user || isGsiInitRef.current) return;
+    
     const timer = setTimeout(() => {
-      if ((window as any).google) {
+      if ((window as any).google?.accounts?.id) {
         (window as any).google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleGoogleResponse,
+          auto_select: false
         });
         const btn = document.getElementById("google-signin-btn");
         if (btn) {
           (window as any).google.accounts.id.renderButton(btn, {
             theme: "outline", size: "large", width: 320, shape: "pill"
           });
+          isGsiInitRef.current = true;
         }
       }
     }, 1000);
@@ -144,9 +181,11 @@ const App: React.FC = () => {
   }, [hasApiKey, handleGoogleResponse, GOOGLE_CLIENT_ID, user]);
 
   if (hasApiKey === null) {
-    return <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-white/20 border-t-blue-600 rounded-full animate-spin"></div>
-    </div>;
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-white/20 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   if (!hasApiKey) {
@@ -155,9 +194,23 @@ const App: React.FC = () => {
         <div className="bg-white rounded-[3rem] p-12 max-w-lg w-full shadow-2xl text-center border border-white/10">
           <div className="w-20 h-20 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-white text-4xl font-black shadow-2xl mb-8">JS</div>
           <h1 className="text-3xl font-black text-slate-900 mb-4">Secure Boot Required</h1>
-          <p className="text-slate-500 mb-10 text-lg font-medium leading-relaxed">
+          <p className="text-slate-500 mb-8 text-lg font-medium leading-relaxed">
             The JS Bank Portal requires an active Project Key to initialize corporate AI security and search services.
           </p>
+          
+          <div className="mb-10 p-5 bg-blue-50 rounded-2xl border border-blue-100 text-left text-xs text-blue-800 space-y-2">
+            <p className="font-black uppercase tracking-widest text-[10px]">Mandatory Billing Requirement:</p>
+            <p>Users must select an API key from a paid GCP project. Please ensure your project has billing enabled.</p>
+            <a 
+              href="https://ai.google.dev/gemini-api/docs/billing" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-block font-black text-blue-600 hover:underline mt-1"
+            >
+              View Billing Documentation →
+            </a>
+          </div>
+
           <button 
             onClick={handleKeySelection}
             className="w-full py-5 bg-blue-600 text-white font-black rounded-[2rem] hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95 uppercase tracking-widest text-sm"
@@ -188,13 +241,13 @@ const App: React.FC = () => {
               </div>
             )}
             <p className="text-xs text-slate-400 max-w-xs leading-relaxed font-medium">
-              By signing in, you agree to the JS Bank Acceptable Use Policy and Information Security Guidelines.
+              Official JS Bank Employee Access Only. Authorized personnel are monitored.
             </p>
           </div>
           {isLoggingIn && (
             <div className="absolute inset-0 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center z-50">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-8 text-slate-900 font-black tracking-tight text-lg">JSBL IDENTITY AUTHENTICATION...</p>
+              <p className="mt-8 text-slate-900 font-black tracking-tight text-lg">AUTHENTICATING...</p>
             </div>
           )}
         </div>
