@@ -3,23 +3,24 @@ import React from 'react';
 
 interface LogoProps {
   className?: string;
-  variant?: 'full' | 'icon';
 }
 
 /**
- * Logo component that automatically switches between light and dark versions.
- * - logo.png: Visible in light mode (standard version for light backgrounds)
- * - darklogo.png: Visible in dark mode (inverted version for dark backgrounds)
+ * JS Bank Logo Component
+ * Loads logo.png for light mode and darklogo.png for dark mode.
+ * Both files are expected to be in the project root.
  */
-const Logo: React.FC<LogoProps> = ({ className = "w-48", variant = 'full' }) => {
+const Logo: React.FC<LogoProps> = ({ className = "w-48" }) => {
   return (
-    <div className={`${className} flex items-center justify-center transition-opacity duration-300`}>
+    <div className={`${className} flex items-center justify-center`}>
       {/* Light Mode Logo */}
       <img 
         src="logo.png" 
         alt="JS Bank" 
         className="block dark:hidden w-full h-auto object-contain"
-        loading="eager"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = 'https://jsbl.com/wp-content/uploads/2021/06/js-bank-logo.png';
+        }}
       />
       
       {/* Dark Mode Logo */}
@@ -27,7 +28,10 @@ const Logo: React.FC<LogoProps> = ({ className = "w-48", variant = 'full' }) => 
         src="darklogo.png" 
         alt="JS Bank" 
         className="hidden dark:block w-full h-auto object-contain"
-        loading="eager"
+        onError={(e) => {
+          // Fallback if darklogo.png is missing: use a high-contrast version or the standard logo
+          (e.target as HTMLImageElement).src = 'logo.png';
+        }}
       />
     </div>
   );
