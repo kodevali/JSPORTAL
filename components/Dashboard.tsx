@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { getPersonalizedGreeting, getCurrentWeather } from '../services/geminiService';
@@ -29,6 +28,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
   const [loadingEcosystem, setLoadingEcosystem] = useState(false);
   const [weather, setWeather] = useState({ temp: "28°C", desc: "Clear", emoji: "☀️", sources: [] as any[] });
 
+  // Deduplicate array by a specific property
+  // Fix: Explicitly type the Set to avoid 'never' inference issues which can propagate to call sites
+  const deduplicate = <T, K extends keyof T>(arr: T[], key: K): T[] => {
+    const seen = new Set<T[K]>();
+    return arr.filter(item => {
+      const val = item[key];
+      if (seen.has(val)) return false;
+      seen.add(val);
+      return true;
+    });
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const res = await getPersonalizedGreeting(user.name, user.role);
@@ -44,11 +55,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
       if (accessToken) {
         setLoadingEcosystem(true);
         try {
+          // GMAIL
           const gmailListRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?q=label:IMPORTANT&maxResults=5', {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           const listData = await gmailListRes.json();
-          
           if (listData.messages) {
             const emailDetails = await Promise.all(
               listData.messages.map(async (msg: any) => {
@@ -70,20 +81,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
                 };
               })
             );
-            setEmails(emailDetails);
+            setEmails(deduplicate(emailDetails, 'id'));
           }
 
+          // TASKS
           const tasksRes = await fetch('https://tasks.googleapis.com/tasks/v1/lists/@default/tasks?maxResults=5', {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           const tasksData = await tasksRes.json();
-          setTasks(tasksData.items || []);
+          // Fix: Ensure the array is treated as any[] to prevent empty array literals from being inferred as never[]
+          setTasks(deduplicate((tasksData.items || []) as any[], 'id'));
 
+          // CALENDAR
           const calRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${new Date().toISOString()}&maxResults=5&singleEvents=true&orderBy=startTime`, {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           const calData = await calRes.json();
-          setCalendarEvents(calData.items || []);
+          // Fix: Ensure the array is treated as any[] to prevent empty array literals from being inferred as never[]
+          setCalendarEvents(deduplicate((calData.items || []) as any[], 'id'));
         } catch (err) {
           console.error("Ecosystem sync error:", err);
         } finally {
@@ -102,7 +117,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
 
   return (
     <div className="space-y-4 animate-fadeIn max-w-[1280px] mx-auto">
-      {/* Refined Header Section */}
       <div className="flex items-center justify-between pb-2">
         <div className="flex flex-col">
           <h1 className="text-3xl font-black text-[#044A8D] dark:text-white tracking-tight">Salam, {user.name.split(' ')[0]}</h1>
@@ -142,8 +156,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 h-full">
-          
-          {/* Priority Feed - Large Square */}
           <div className={`${cardStyle} md:col-span-8 h-[380px]`}>
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/20 transition-colors">
               <div className={labelText}>
@@ -179,7 +191,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
           </div>
 
-          {/* Sessions - Vertical Square */}
           <div className={`${cardStyle} md:col-span-4 h-[380px] bg-[#044A8D] text-white shadow-xl shadow-blue-100/20`}>
             <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -189,8 +200,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scroll-white scrollbar-hide">
               {calendarEvents.length > 0 ? (
-                calendarEvents.map((event, i) => (
-                  <div key={i} className="flex items-start space-x-4 border-l-2 border-[#FAB51D]/40 hover:border-[#FAB51D] pl-4 transition-all group cursor-pointer">
+                calendarEvents.map((event) => (
+                  <div key={event.id} className="flex items-start space-x-4 border-l-2 border-[#FAB51D]/40 hover:border-[#FAB51D] pl-4 transition-all group cursor-pointer">
                     <div className="flex flex-col">
                       <h4 className="font-bold text-xs line-clamp-2 leading-tight group-hover:text-[#FAB51D] transition-colors">{event.summary}</h4>
                       <p className="text-[9px] text-blue-200 uppercase font-black tracking-widest mt-1.5 flex items-center space-x-2">
@@ -211,7 +222,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
           </div>
 
-          {/* Activity Metrics - Short Wide */}
           <div className={`${cardStyle} md:col-span-8 h-[240px]`}>
             <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between transition-colors">
                <h2 className={labelText}><span>Activity Metrics (HQ Load)</span></h2>
@@ -240,7 +250,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
           </div>
 
-          {/* Backlog - Short Square */}
           <div className={`${cardStyle} md:col-span-4 h-[240px]`}>
             <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/20 dark:bg-slate-900/20 transition-colors">
                <h2 className={labelText}><span>Personal Backlog</span></h2>
@@ -248,8 +257,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scroll dark:custom-scroll-white scrollbar-hide">
               {tasks.length > 0 ? (
-                tasks.map((task, i) => (
-                  <div key={i} className="p-3 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 hover:border-[#EF7A25] dark:hover:border-[#EF7A25] rounded-xl flex items-center justify-between group transition-all shadow-sm">
+                tasks.map((task) => (
+                  <div key={task.id} className="p-3 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 hover:border-[#EF7A25] dark:hover:border-[#EF7A25] rounded-xl flex items-center justify-between group transition-all shadow-sm">
                     <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate mr-3">{task.title}</span>
                     <input type="checkbox" className="w-4 h-4 rounded border-slate-400 dark:border-slate-700 text-[#EF7A25] focus:ring-[#EF7A25] cursor-pointer bg-white dark:bg-transparent" />
                   </div>
@@ -259,7 +268,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
               )}
             </div>
           </div>
-
         </div>
       )}
       
@@ -268,10 +276,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
         .custom-scroll-white::-webkit-scrollbar { width: 0px; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .dark .custom-scroll-white::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.05);
-        }
+        .dark .custom-scroll-white::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); }
       `}</style>
     </div>
   );
