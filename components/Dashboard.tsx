@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { getPersonalizedGreeting, getCurrentWeather } from '../services/geminiService';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { COLORS } from '../constants';
 
 interface GmailMessage {
   id: string;
@@ -19,7 +21,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing, onSyncRequest }) => {
-  const [greeting, setGreeting] = useState("Initializing workspace...");
+  const [greeting, setGreeting] = useState("Loading Workspace...");
   const [time, setTime] = useState(new Date().toLocaleTimeString());
   const [emails, setEmails] = useState<GmailMessage[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -30,7 +32,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
   useEffect(() => {
     const fetchData = async () => {
       const res = await getPersonalizedGreeting(user.name, user.role);
-      setGreeting(res || `Assalamu Alaikum, ${user.name}`);
+      setGreeting(res || `Assalamu Alaikum, Mirza`);
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -71,13 +73,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
             setEmails(emailDetails);
           }
 
-          const tasksRes = await fetch('https://tasks.googleapis.com/tasks/v1/lists/@default/tasks?maxResults=3', {
+          const tasksRes = await fetch('https://tasks.googleapis.com/tasks/v1/lists/@default/tasks?maxResults=5', {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           const tasksData = await tasksRes.json();
           setTasks(tasksData.items || []);
 
-          const calRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${new Date().toISOString()}&maxResults=4&singleEvents=true&orderBy=startTime`, {
+          const calRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${new Date().toISOString()}&maxResults=5&singleEvents=true&orderBy=startTime`, {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           const calData = await calRes.json();
@@ -95,152 +97,180 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
     return () => clearInterval(timer);
   }, [user, accessToken]);
 
-  const cardStyle = "bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden flex flex-col";
+  const cardStyle = "bg-white dark:bg-[#1E293B] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex flex-col overflow-hidden transition-colors duration-300";
+  const labelText = "text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-[#94A3B8] flex items-center space-x-2";
 
   return (
-    <div className="space-y-4 animate-fadeIn max-w-full">
-      {/* Top Bar - More Compact */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 animate-fadeIn max-w-[1280px] mx-auto">
+      {/* Refined Header Section */}
+      <div className="flex items-center justify-between pb-2">
         <div className="flex flex-col">
-          <h1 className="text-2xl font-black text-[#044A8D] tracking-tight">Salam, {user.name.split(' ')[0]}</h1>
-          <p className="text-slate-400 text-xs font-medium truncate max-w-lg">{greeting}</p>
+          <h1 className="text-3xl font-black text-[#044A8D] dark:text-white tracking-tight">Salam, Mirza</h1>
+          <p className="text-slate-400 dark:text-[#94A3B8] text-xs font-semibold max-w-lg truncate opacity-80 mt-1">{greeting}</p>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
-            <div className="text-right border-r border-slate-100 pr-4">
-              <p className="text-lg font-black text-slate-800 leading-none">{time}</p>
-              <p className="text-[8px] text-[#044A8D] font-bold uppercase tracking-widest mt-0.5">Karachi HQ</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-lg">{weather.emoji}</span>
-              <span className="text-xs font-bold text-slate-700">{weather.temp}</span>
+        <div className="flex items-center space-x-3 bg-white dark:bg-[#1E293B] p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
+          <div className="px-4 py-1.5 border-r border-slate-100 dark:border-slate-800 text-right">
+            <p className="text-xl font-black text-slate-800 dark:text-white leading-none tabular-nums tracking-tighter">{time}</p>
+            <p className="text-[8px] text-[#044A8D] dark:text-[#FAB51D] font-black uppercase tracking-widest mt-1">Karachi HQ</p>
+          </div>
+          <div className="flex items-center space-x-3 pr-4 pl-1">
+            <span className="text-2xl">{weather.emoji}</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-black text-slate-800 dark:text-white leading-none">{weather.temp}</span>
+              <span className="text-[9px] font-bold text-slate-400 dark:text-[#94A3B8] uppercase tracking-tight">{weather.desc}</span>
             </div>
           </div>
         </div>
       </div>
 
       {!accessToken && !isAuthorizing ? (
-        <div className={`${cardStyle} p-8 items-center text-center space-y-4 h-64 justify-center bg-blue-50/50`}>
-          <div className="p-3 bg-[#044A8D] text-white rounded-full">
-             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        <div className={`${cardStyle} h-[400px] items-center justify-center space-y-6 text-center bg-[#044A8D]/5 border-dashed border-[#044A8D]/20`}>
+          <div className="w-14 h-14 bg-[#044A8D] text-white rounded-2xl flex items-center justify-center shadow-lg">
+             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
-          <h2 className="text-lg font-bold text-slate-900">Ecosystem Link Required</h2>
-          <button onClick={onSyncRequest} className="px-6 py-2.5 bg-[#044A8D] text-white font-bold rounded-lg hover:bg-blue-800 transition-all shadow-md text-xs uppercase tracking-widest">Authorize Access</button>
+          <div className="max-w-xs">
+            <h2 className="text-lg font-black text-[#044A8D] dark:text-white">Ecosystem Access Pending</h2>
+            <p className="text-slate-500 dark:text-[#94A3B8] text-xs mt-2 font-medium">Link your JS Bank workspace to synchronize your real-time schedule and priority communications.</p>
+          </div>
+          <button onClick={onSyncRequest} className="px-8 py-3 bg-[#044A8D] text-white font-black rounded-xl hover:bg-blue-800 transition-all text-[10px] uppercase tracking-widest shadow-xl shadow-blue-200">Authenticate Sync</button>
         </div>
       ) : isAuthorizing ? (
-        <div className={`${cardStyle} p-8 items-center justify-center space-y-4 h-64`}>
-          <div className="w-8 h-8 border-3 border-slate-100 border-t-[#044A8D] rounded-full animate-spin"></div>
-          <p className="text-xs font-bold text-[#044A8D] uppercase tracking-widest animate-pulse">Syncing Services...</p>
+        <div className={`${cardStyle} h-[400px] items-center justify-center space-y-4`}>
+          <div className="w-10 h-10 border-4 border-slate-100 dark:border-slate-800 border-t-[#044A8D] rounded-full animate-spin"></div>
+          <p className="text-[10px] font-black text-[#044A8D] dark:text-[#FAB51D] uppercase tracking-[0.2em] animate-pulse">Establishing Session...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
-          {/* Priority Feed - The main big square */}
-          <div className={`${cardStyle} md:col-span-2 h-[380px]`}>
-            <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 rounded-full bg-[#EF7A25]"></div>
-                <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Priority Communications</h2>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
+          
+          {/* Priority Feed - Large Square */}
+          <div className={`${cardStyle} md:col-span-8 h-[380px]`}>
+            <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-900/20 transition-colors">
+              <div className={labelText}>
+                <div className="w-2 h-2 rounded-full bg-[#EF7A25] shadow-[0_0_5px_#EF7A25]"></div>
+                <span>Priority Communications</span>
               </div>
-              <span className="text-[9px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded uppercase">GMAIL</span>
+              <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600 tracking-tighter">GMAIL SECURE</span>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scroll dark:custom-scroll-white scrollbar-hide">
               {loadingEcosystem ? (
-                <div className="flex items-center justify-center h-full">
-                   <div className="w-6 h-6 border-2 border-slate-100 border-t-[#044A8D] rounded-full animate-spin"></div>
+                <div className="h-full flex items-center justify-center">
+                   <div className="w-6 h-6 border-2 border-slate-100 dark:border-slate-800 border-t-[#044A8D] rounded-full animate-spin"></div>
                 </div>
-              ) : emails.map((email) => (
-                <div key={email.id} className="p-3 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg transition-all cursor-pointer group shadow-sm">
-                  <div className="flex justify-between items-start mb-0.5">
-                    <span className="text-[10px] font-black text-[#044A8D] uppercase truncate w-2/3">{email.from}</span>
-                    <span className="text-[9px] font-bold text-slate-400">{email.date}</span>
+              ) : emails.length > 0 ? (
+                emails.map((email) => (
+                  <div key={email.id} className="p-3 bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl transition-all cursor-pointer group hover:shadow-sm">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] font-black text-[#044A8D] dark:text-[#FAB51D] uppercase tracking-tight truncate w-2/3">{email.from}</span>
+                      <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">{email.date}</span>
+                    </div>
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 mb-1 group-hover:text-[#EF7A25] transition-colors">{email.subject}</h3>
+                    <p className="text-[10px] text-slate-500 dark:text-[#94A3B8] line-clamp-1 opacity-70 italic leading-none">{email.snippet}</p>
                   </div>
-                  <h3 className="text-xs font-bold text-slate-900 line-clamp-1 mb-0.5 group-hover:text-[#EF7A25]">{email.subject}</h3>
-                  <p className="text-[10px] text-slate-500 line-clamp-1 opacity-80">{email.snippet}</p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="h-full flex items-center justify-center opacity-20 text-[10px] font-black uppercase tracking-widest text-slate-400">Inbox Zero</div>
+              )}
             </div>
             
-            <div className="p-3 bg-slate-50/50 border-t border-slate-50">
-              <button className="w-full py-2 bg-[#044A8D] text-white text-[9px] font-black rounded-lg uppercase tracking-[0.15em] hover:bg-blue-800 transition-colors shadow-sm">Access All Mail</button>
+            <div className="p-4 bg-white dark:bg-[#1E293B] border-t border-slate-50 dark:border-slate-800 transition-colors">
+              <button className="w-full py-2.5 bg-[#044A8D] text-white text-[10px] font-black rounded-lg uppercase tracking-[0.15em] hover:bg-blue-800 transition-all shadow-md active:scale-[0.98]">Access All Mail</button>
             </div>
           </div>
 
-          {/* Today's Sessions - Side Square */}
-          <div className={`${cardStyle} h-[380px] bg-[#044A8D] text-white`}>
-            <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+          {/* Sessions - Vertical Square */}
+          <div className={`${cardStyle} md:col-span-4 h-[380px] bg-[#044A8D] text-white shadow-xl shadow-blue-100/20`}>
+            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 rounded-full bg-[#FAB51D]"></div>
-                <h2 className="text-sm font-black uppercase tracking-widest">Calendar</h2>
+                <div className="w-2 h-2 rounded-full bg-[#FAB51D] shadow-[0_0_8px_#FAB51D]"></div>
+                <h2 className="text-[10px] font-black uppercase tracking-widest text-blue-100">Sessions</h2>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scroll-white scrollbar-hide">
               {calendarEvents.length > 0 ? (
                 calendarEvents.map((event, i) => (
-                  <div key={i} className="flex items-start space-x-4 group border-l-2 border-[#FAB51D] pl-4">
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-xs line-clamp-1 group-hover:text-[#FAB51D] transition-colors">{event.summary}</h4>
-                      <p className="text-[10px] text-blue-200 uppercase font-black tracking-wider mt-0.5">
-                        {new Date(event.start.dateTime || event.start.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div key={i} className="flex items-start space-x-4 border-l-2 border-[#FAB51D]/40 hover:border-[#FAB51D] pl-4 transition-all group cursor-pointer">
+                    <div className="flex flex-col">
+                      <h4 className="font-bold text-xs line-clamp-2 leading-tight group-hover:text-[#FAB51D] transition-colors">{event.summary}</h4>
+                      <p className="text-[9px] text-blue-200 uppercase font-black tracking-widest mt-1.5 flex items-center space-x-2">
+                        <span>{new Date(event.start.dateTime || event.start.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="h-full flex items-center justify-center opacity-30 italic text-xs">Clear schedule</div>
+                <div className="h-full flex flex-col items-center justify-center opacity-20 space-y-2">
+                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                   <span className="text-[9px] font-black uppercase tracking-widest">No Events Today</span>
+                </div>
               )}
             </div>
-            <div className="p-4">
-              <button className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border border-white/10">Full Calendar</button>
+            <div className="p-4 bg-blue-900/40">
+              <button className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border border-white/10">Launch JS Calendar</button>
             </div>
           </div>
 
-          {/* Engagement Chart - Lower Tighter Tiles */}
-          <div className={`${cardStyle} md:col-span-2 h-[250px]`}>
-            <div className="px-5 py-3 border-b border-slate-50 flex items-center justify-between">
-               <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Activity Metrics</h2>
-               <div className="flex items-center space-x-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#044A8D]"></span>
-                  <span className="text-[9px] font-black text-slate-400 uppercase">Load</span>
+          {/* Activity Metrics - Short Wide */}
+          <div className={`${cardStyle} md:col-span-8 h-[240px]`}>
+            <div className="px-6 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between transition-colors">
+               <h2 className={labelText}><span>Activity Metrics</span></h2>
+               <div className="flex items-center space-x-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#044A8D] dark:bg-[#FAB51D]"></span>
+                  <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Load Monitor</span>
                </div>
             </div>
-            <div className="flex-1 px-4 py-2">
+            <div className="flex-1 p-2 bg-slate-50/20 dark:bg-slate-900/20 transition-colors">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={[{n: 'M', v: 40}, {n: 'T', v: 30}, {n: 'W', v: 60}, {n: 'T', v: 80}, {n: 'F', v: 50}]}>
                   <defs>
                     <linearGradient id="colorV" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#044A8D" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#044A8D" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="#044A8D" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '10px'}} />
-                  <Area type="monotone" dataKey="v" stroke="#044A8D" fill="url(#colorV)" strokeWidth={3} />
+                  <Tooltip 
+                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 8px 16px rgba(0,0,0,0.08)', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#1E293B', color: '#fff'}}
+                  />
+                  <Area type="monotone" dataKey="v" stroke="#044A8D" fill="url(#colorV)" strokeWidth={4} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Backlog Tile */}
-          <div className={`${cardStyle} h-[250px]`}>
-            <div className="px-5 py-3 border-b border-slate-50">
-               <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Backlog</h2>
+          {/* Backlog - Short Square */}
+          <div className={`${cardStyle} md:col-span-4 h-[240px]`}>
+            <div className="px-6 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/20 dark:bg-slate-900/20 transition-colors">
+               <h2 className={labelText}><span>Backlog</span></h2>
+               <span className="text-[8px] font-black text-[#EF7A25] bg-orange-50 dark:bg-orange-950/20 px-2 py-0.5 rounded uppercase">{tasks.length} Pending</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scroll dark:custom-scroll-white scrollbar-hide">
               {tasks.length > 0 ? (
                 tasks.map((task, i) => (
-                  <div key={i} className="p-2.5 bg-slate-50 hover:bg-orange-50 rounded-lg flex items-center justify-between group transition-colors shadow-sm">
-                    <span className="text-[11px] font-bold text-slate-700 truncate mr-2">{task.title}</span>
-                    <input type="checkbox" className="w-3.5 h-3.5 rounded-md border-slate-300 text-[#EF7A25] focus:ring-[#EF7A25]" />
+                  <div key={i} className="p-2.5 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-900 rounded-xl flex items-center justify-between group transition-all shadow-sm">
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate mr-3">{task.title}</span>
+                    <input type="checkbox" className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-700 text-[#EF7A25] focus:ring-[#EF7A25] cursor-pointer bg-transparent" />
                   </div>
                 ))
               ) : (
-                <div className="h-full flex items-center justify-center opacity-30 text-[10px] font-bold uppercase tracking-widest">All caught up</div>
+                <div className="h-full flex items-center justify-center opacity-20 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Queue Clear</div>
               )}
             </div>
           </div>
+
         </div>
       )}
+      
+      <style>{`
+        .custom-scroll::-webkit-scrollbar { width: 0px; }
+        .custom-scroll-white::-webkit-scrollbar { width: 0px; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .dark .custom-scroll-white::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.05);
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { User, UserRole } from './types';
 import Sidebar from './components/Sidebar';
@@ -36,6 +37,10 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
   const [accessToken, setAccessToken] = useState<string | null>(() => sessionStorage.getItem('js_access_token'));
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('js_portal_theme');
+    return saved === 'dark';
+  });
   
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -48,6 +53,16 @@ const App: React.FC = () => {
   const isTokenClientInitRef = useRef(false);
   
   const GOOGLE_CLIENT_ID = "936145652014-tq1mdn7q8gj2maa677vi2e1k13o0ub4b.apps.googleusercontent.com"; 
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('js_portal_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('js_portal_theme', 'light');
+    }
+  }, [darkMode]);
 
   const logout = () => {
     setUser(null);
@@ -182,8 +197,8 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
         <div className="bg-white rounded-[2.5rem] p-12 max-w-lg w-full shadow-2xl text-center">
           <img src="https://jsbl.com/wp-content/uploads/2021/06/js-bank-logo.png" className="w-48 mx-auto mb-10" alt="Logo" />
-          <h1 className="text-2xl font-black text-[#044A8D] mb-4 uppercase tracking-tighter">Security Protocol Required</h1>
-          <p className="text-slate-500 mb-8 text-sm font-bold leading-relaxed">
+          <h1 className="text-2xl font-black text-[#044A8D] mb-4 uppercase tracking-tighter text-center">Security Protocol Required</h1>
+          <p className="text-slate-500 mb-8 text-sm font-bold leading-relaxed text-center">
             Portal initialization requires a verified AI Project Key to enable bank-wide search and intelligence protocols.
           </p>
           <button 
@@ -204,8 +219,8 @@ const App: React.FC = () => {
           <div className="absolute top-0 left-0 w-full h-2 bg-[#EF7A25]"></div>
           <div className="mb-10">
             <img src="https://jsbl.com/wp-content/uploads/2021/06/js-bank-logo.png" className="w-48 mx-auto mb-8" alt="Logo" />
-            <h1 className="text-3xl font-black text-[#044A8D] mb-1">Internal Hub</h1>
-            <p className="text-[#FAB51D] font-black uppercase tracking-[0.3em] text-[9px]">Corporate Access Control</p>
+            <h1 className="text-3xl font-black text-[#044A8D] mb-1 text-center">Internal Hub</h1>
+            <p className="text-[#FAB51D] font-black uppercase tracking-[0.3em] text-[9px] text-center">Corporate Access Control</p>
           </div>
           <div className="flex flex-col items-center space-y-6">
             <div id="google-signin-btn" className="min-h-[50px]"></div>
@@ -230,19 +245,25 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role={user.role} />
+    <div className="flex min-h-screen bg-slate-50 dark:bg-[#0F172A] transition-colors duration-300">
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        role={user.role} 
+        darkMode={darkMode}
+        toggleDarkMode={() => setDarkMode(!darkMode)}
+      />
       <main className="flex-1 ml-64 p-8 transition-all duration-300">
         <header className="flex justify-end items-center mb-8">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 bg-white pl-1.5 pr-6 py-1.5 rounded-2xl shadow-sm border border-slate-100">
-               <img src={user.avatar} className="w-10 h-10 rounded-xl object-cover border border-slate-100 shadow-inner" alt="User" referrerPolicy="no-referrer" />
+            <div className="flex items-center space-x-3 bg-white dark:bg-[#1E293B] pl-1.5 pr-6 py-1.5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
+               <img src={user.avatar} className="w-10 h-10 rounded-xl object-cover border border-slate-100 dark:border-slate-700 shadow-inner" alt="User" referrerPolicy="no-referrer" />
                <div className="text-left">
-                 <p className="text-xs font-black text-slate-900 leading-none truncate max-w-[120px]">{user.name}</p>
+                 <p className="text-xs font-black text-slate-900 dark:text-white leading-none truncate max-w-[120px]">{user.name}</p>
                  <p className="text-[8px] text-[#EF7A25] font-black uppercase tracking-widest mt-1.5">{user.role.replace('_', ' ')}</p>
                </div>
             </div>
-            <button onClick={logout} className="p-3 bg-white text-slate-400 hover:text-red-600 rounded-xl border border-slate-50 shadow-sm transition-all hover:bg-red-50">
+            <button onClick={logout} className="p-3 bg-white dark:bg-[#1E293B] text-slate-400 hover:text-red-600 rounded-xl border border-slate-50 dark:border-slate-800 shadow-sm transition-all hover:bg-red-50 dark:hover:bg-red-950/30">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
