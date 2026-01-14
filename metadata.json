@@ -1,0 +1,7 @@
+{
+  "name": "JS Bank Intranet Portal",
+  "description": "A secure, modern intranet portal for JS Bank featuring role-based access control, personalized dashboards, news feeds, tiered downloads, and an IT ticketing system.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
