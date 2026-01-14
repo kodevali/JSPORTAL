@@ -21,7 +21,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing, onSyncRequest }) => {
-  const [greeting, setGreeting] = useState("Loading Workspace...");
+  const [greeting, setGreeting] = useState("Establishing workspace...");
   const [time, setTime] = useState(new Date().toLocaleTimeString());
   const [emails, setEmails] = useState<GmailMessage[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -32,7 +32,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
   useEffect(() => {
     const fetchData = async () => {
       const res = await getPersonalizedGreeting(user.name, user.role);
-      setGreeting(res || `Assalamu Alaikum, Mirza`);
+      setGreeting(res || `Assalamu Alaikum, ${user.name.split(' ')[0]}`);
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -97,19 +97,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
     return () => clearInterval(timer);
   }, [user, accessToken]);
 
-  const cardStyle = "bg-white dark:bg-[#1E293B] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex flex-col overflow-hidden transition-colors duration-300";
-  const labelText = "text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-[#94A3B8] flex items-center space-x-2";
+  const cardStyle = "bg-white dark:bg-[#1E293B] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.08)] flex flex-col overflow-hidden transition-all duration-300";
+  const labelText = "text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-[#94A3B8] flex items-center space-x-2";
 
   return (
     <div className="space-y-4 animate-fadeIn max-w-[1280px] mx-auto">
       {/* Refined Header Section */}
       <div className="flex items-center justify-between pb-2">
         <div className="flex flex-col">
-          <h1 className="text-3xl font-black text-[#044A8D] dark:text-white tracking-tight">Salam, Mirza</h1>
-          <p className="text-slate-400 dark:text-[#94A3B8] text-xs font-semibold max-w-lg truncate opacity-80 mt-1">{greeting}</p>
+          <h1 className="text-3xl font-black text-[#044A8D] dark:text-white tracking-tight">Salam, {user.name.split(' ')[0]}</h1>
+          <p className="text-slate-500 dark:text-[#94A3B8] text-xs font-semibold max-w-lg truncate opacity-90 mt-1">{greeting}</p>
         </div>
         
-        <div className="flex items-center space-x-3 bg-white dark:bg-[#1E293B] p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">
+        <div className="flex items-center space-x-3 bg-white dark:bg-[#1E293B] p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-300">
           <div className="px-4 py-1.5 border-r border-slate-100 dark:border-slate-800 text-right">
             <p className="text-xl font-black text-slate-800 dark:text-white leading-none tabular-nums tracking-tighter">{time}</p>
             <p className="text-[8px] text-[#044A8D] dark:text-[#FAB51D] font-black uppercase tracking-widest mt-1">Karachi HQ</p>
@@ -125,56 +125,56 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
       </div>
 
       {!accessToken && !isAuthorizing ? (
-        <div className={`${cardStyle} h-[400px] items-center justify-center space-y-6 text-center bg-[#044A8D]/5 border-dashed border-[#044A8D]/20`}>
-          <div className="w-14 h-14 bg-[#044A8D] text-white rounded-2xl flex items-center justify-center shadow-lg">
+        <div className={`${cardStyle} h-[420px] items-center justify-center space-y-6 text-center bg-[#044A8D]/5 border-dashed border-[#044A8D]/20`}>
+          <div className="w-16 h-16 bg-[#044A8D] text-white rounded-2xl flex items-center justify-center shadow-lg">
              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
-          <div className="max-w-xs">
-            <h2 className="text-lg font-black text-[#044A8D] dark:text-white">Ecosystem Access Pending</h2>
-            <p className="text-slate-500 dark:text-[#94A3B8] text-xs mt-2 font-medium">Link your JS Bank workspace to synchronize your real-time schedule and priority communications.</p>
+          <div className="max-w-xs px-4">
+            <h2 className="text-xl font-black text-[#044A8D] dark:text-white">Workspace Sync Required</h2>
+            <p className="text-slate-600 dark:text-[#94A3B8] text-sm mt-2 font-medium">Link your JS Bank environment to synchronize your real-time schedule, backlog, and priority communications.</p>
           </div>
-          <button onClick={onSyncRequest} className="px-8 py-3 bg-[#044A8D] text-white font-black rounded-xl hover:bg-blue-800 transition-all text-[10px] uppercase tracking-widest shadow-xl shadow-blue-200">Authenticate Sync</button>
+          <button onClick={onSyncRequest} className="px-10 py-3.5 bg-[#044A8D] text-white font-black rounded-xl hover:bg-blue-800 transition-all text-[11px] uppercase tracking-widest shadow-xl shadow-blue-200 active:scale-95">Link My Environment</button>
         </div>
       ) : isAuthorizing ? (
-        <div className={`${cardStyle} h-[400px] items-center justify-center space-y-4`}>
+        <div className={`${cardStyle} h-[420px] items-center justify-center space-y-4`}>
           <div className="w-10 h-10 border-4 border-slate-100 dark:border-slate-800 border-t-[#044A8D] rounded-full animate-spin"></div>
           <p className="text-[10px] font-black text-[#044A8D] dark:text-[#FAB51D] uppercase tracking-[0.2em] animate-pulse">Establishing Session...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 h-full">
           
           {/* Priority Feed - Large Square */}
           <div className={`${cardStyle} md:col-span-8 h-[380px]`}>
-            <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-900/20 transition-colors">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/20 transition-colors">
               <div className={labelText}>
                 <div className="w-2 h-2 rounded-full bg-[#EF7A25] shadow-[0_0_5px_#EF7A25]"></div>
                 <span>Priority Communications</span>
               </div>
-              <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600 tracking-tighter">GMAIL SECURE</span>
+              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-600 tracking-tighter">GMAIL SECURE</span>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scroll dark:custom-scroll-white scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 custom-scroll dark:custom-scroll-white scrollbar-hide">
               {loadingEcosystem ? (
                 <div className="h-full flex items-center justify-center">
                    <div className="w-6 h-6 border-2 border-slate-100 dark:border-slate-800 border-t-[#044A8D] rounded-full animate-spin"></div>
                 </div>
               ) : emails.length > 0 ? (
                 emails.map((email) => (
-                  <div key={email.id} className="p-3 bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl transition-all cursor-pointer group hover:shadow-sm">
+                  <div key={email.id} className="p-4 bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl transition-all cursor-pointer group hover:shadow-sm">
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[10px] font-black text-[#044A8D] dark:text-[#FAB51D] uppercase tracking-tight truncate w-2/3">{email.from}</span>
                       <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">{email.date}</span>
                     </div>
                     <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 mb-1 group-hover:text-[#EF7A25] transition-colors">{email.subject}</h3>
-                    <p className="text-[10px] text-slate-500 dark:text-[#94A3B8] line-clamp-1 opacity-70 italic leading-none">{email.snippet}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-[#94A3B8] line-clamp-1 opacity-80 leading-tight italic">{email.snippet}</p>
                   </div>
                 ))
               ) : (
-                <div className="h-full flex items-center justify-center opacity-20 text-[10px] font-black uppercase tracking-widest text-slate-400">Inbox Zero</div>
+                <div className="h-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-600">Inbox Zero</div>
               )}
             </div>
             
-            <div className="p-4 bg-white dark:bg-[#1E293B] border-t border-slate-50 dark:border-slate-800 transition-colors">
+            <div className="p-4 bg-white dark:bg-[#1E293B] border-t border-slate-100 dark:border-slate-800 transition-colors">
               <button className="w-full py-2.5 bg-[#044A8D] text-white text-[10px] font-black rounded-lg uppercase tracking-[0.15em] hover:bg-blue-800 transition-all shadow-md active:scale-[0.98]">Access All Mail</button>
             </div>
           </div>
@@ -200,7 +200,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
                   </div>
                 ))
               ) : (
-                <div className="h-full flex flex-col items-center justify-center opacity-20 space-y-2">
+                <div className="h-full flex flex-col items-center justify-center opacity-60 space-y-2">
                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                    <span className="text-[9px] font-black uppercase tracking-widest">No Events Today</span>
                 </div>
@@ -213,11 +213,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
 
           {/* Activity Metrics - Short Wide */}
           <div className={`${cardStyle} md:col-span-8 h-[240px]`}>
-            <div className="px-6 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between transition-colors">
-               <h2 className={labelText}><span>Activity Metrics</span></h2>
+            <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between transition-colors">
+               <h2 className={labelText}><span>Activity Metrics (HQ Load)</span></h2>
                <div className="flex items-center space-x-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#044A8D] dark:bg-[#FAB51D]"></span>
-                  <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Load Monitor</span>
+                  <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Load Monitor</span>
                </div>
             </div>
             <div className="flex-1 p-2 bg-slate-50/20 dark:bg-slate-900/20 transition-colors">
@@ -230,7 +230,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
                     </linearGradient>
                   </defs>
                   <Tooltip 
-                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 8px 16px rgba(0,0,0,0.08)', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#1E293B', color: '#fff'}}
+                    labelFormatter={(label) => `Day: ${label}`}
+                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#0F172A', color: '#fff'}}
+                    itemStyle={{color: '#FAB51D'}}
                   />
                   <Area type="monotone" dataKey="v" stroke="#044A8D" fill="url(#colorV)" strokeWidth={4} />
                 </AreaChart>
@@ -240,20 +242,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
 
           {/* Backlog - Short Square */}
           <div className={`${cardStyle} md:col-span-4 h-[240px]`}>
-            <div className="px-6 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/20 dark:bg-slate-900/20 transition-colors">
-               <h2 className={labelText}><span>Backlog</span></h2>
-               <span className="text-[8px] font-black text-[#EF7A25] bg-orange-50 dark:bg-orange-950/20 px-2 py-0.5 rounded uppercase">{tasks.length} Pending</span>
+            <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/20 dark:bg-slate-900/20 transition-colors">
+               <h2 className={labelText}><span>Personal Backlog</span></h2>
+               <span className="text-[8px] font-black text-[#EF7A25] bg-orange-100 dark:bg-orange-950/20 px-2 py-0.5 rounded uppercase">{tasks.length} Sync'd</span>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scroll dark:custom-scroll-white scrollbar-hide">
               {tasks.length > 0 ? (
                 tasks.map((task, i) => (
-                  <div key={i} className="p-2.5 bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 hover:border-orange-200 dark:hover:border-orange-900 rounded-xl flex items-center justify-between group transition-all shadow-sm">
-                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate mr-3">{task.title}</span>
-                    <input type="checkbox" className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-700 text-[#EF7A25] focus:ring-[#EF7A25] cursor-pointer bg-transparent" />
+                  <div key={i} className="p-3 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 hover:border-[#EF7A25] dark:hover:border-[#EF7A25] rounded-xl flex items-center justify-between group transition-all shadow-sm">
+                    <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate mr-3">{task.title}</span>
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-400 dark:border-slate-700 text-[#EF7A25] focus:ring-[#EF7A25] cursor-pointer bg-white dark:bg-transparent" />
                   </div>
                 ))
               ) : (
-                <div className="h-full flex items-center justify-center opacity-20 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Queue Clear</div>
+                <div className="h-full flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-600">Queue Clear</div>
               )}
             </div>
           </div>

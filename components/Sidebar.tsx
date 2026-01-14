@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UserRole } from '../types';
-import { COLORS } from '../constants';
+import Logo from './Logo';
 
 interface SidebarProps {
   activeTab: string;
@@ -21,15 +21,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, darkMo
 
   return (
     <div className="w-64 bg-[#0F172A] h-screen flex flex-col fixed left-0 top-0 text-white shadow-2xl z-20 border-r border-slate-800">
-      <div className="p-8 flex flex-col items-center bg-white mb-6 border-b border-slate-200">
-        <img 
-          src="https://jsbl.com/wp-content/uploads/2021/06/js-bank-logo.png" 
-          alt="JS Bank Logo" 
-          className="w-full h-auto object-contain max-h-12"
-        />
-        <div className="mt-4 flex flex-col items-center">
-          <div className="h-0.5 w-12 bg-[#EF7A25] rounded-full mb-1"></div>
-          <span className="text-[10px] font-black tracking-[0.3em] uppercase text-[#044A8D] opacity-80">Portal Hub</span>
+      <div className="p-8 flex flex-col items-center bg-white dark:bg-slate-900 mb-6 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+        <Logo className="w-44" />
+        <div className="mt-4 flex flex-col items-center opacity-60">
+          <div className="h-0.5 w-8 bg-[#EF7A25] rounded-full mb-1"></div>
+          <span className="text-[10px] font-black tracking-[0.3em] uppercase text-[#044A8D] dark:text-[#FAB51D]">Internal Hub</span>
         </div>
       </div>
       
@@ -55,7 +51,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, darkMo
       </nav>
       
       <div className="p-6 space-y-4">
-        {/* Dark Mode Toggle */}
         <div className="bg-slate-800/40 rounded-2xl p-4 border border-slate-800 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <svg className="w-4 h-4 text-[#FAB51D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
