@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, darkMo
         <Logo className="mb-2" />
         <div className="flex flex-col items-center">
           <div className="h-0.5 w-6 bg-[#EF7A25] rounded-full mb-1"></div>
-          <span className="text-[9px] font-black tracking-[0.2em] uppercase text-slate-500 dark:text-slate-400">Intranet Portal</span>
+          <span className="text-[9px] font-black tracking-[0.2em] uppercase text-slate-800 dark:text-slate-200">JS Intranet Portal</span>
         </div>
       </div>
       
@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, darkMo
             <svg className="w-4 h-4 text-[#FAB51D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Dark Mode</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Dark Mode</span>
           </div>
           <button 
             onClick={toggleDarkMode}
@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, darkMo
         </div>
 
         <div className="bg-slate-800/40 rounded-2xl p-4 border border-slate-800">
-          <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2">Access Profile</p>
+          <p className="text-[9px] text-slate-300 uppercase font-black tracking-widest mb-2">Access Profile</p>
           <div className="flex items-center space-x-3">
              <div className="w-2 h-2 rounded-full bg-[#FAB51D] animate-pulse shadow-[0_0_8px_#FAB51D]"></div>
              <p className="text-xs font-black text-white uppercase tracking-tight">{role.replace('_', ' ')}</p>

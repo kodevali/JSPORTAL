@@ -50,7 +50,6 @@ const App: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
 
   const tokenClientRef = useRef<any>(null);
-  const isGsiInitRef = useRef(false);
   
   const GOOGLE_CLIENT_ID = "936145652014-tq1mdn7q8gj2maa677vi2e1k13o0ub4b.apps.googleusercontent.com"; 
 
@@ -112,53 +111,55 @@ const App: React.FC = () => {
     }
   }, [requestEcosystemAccess]);
 
-  // SSO and Token Client Initialization
+  // Direct SSO Initialization
   useEffect(() => {
-    const initSSO = () => {
-      if ((window as any).google?.accounts?.id && !isGsiInitRef.current) {
-        (window as any).google.accounts.id.initialize({
+    const checkGsiReady = () => {
+      const g = (window as any).google;
+      if (g?.accounts?.id && g?.accounts?.oauth2) {
+        // Init Identity Services
+        g.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleGoogleResponse,
           auto_select: false
         });
-        
-        const btn = document.getElementById("google-signin-btn");
-        if (btn) {
-          (window as any).google.accounts.id.renderButton(btn, {
+
+        const btnContainer = document.getElementById("google-signin-btn");
+        if (btnContainer) {
+          g.accounts.id.renderButton(btnContainer, {
             theme: darkMode ? "filled_blue" : "outline", 
             size: "large", 
             width: 320, 
             shape: "pill"
           });
-          isGsiInitRef.current = true;
         }
-      }
 
-      if ((window as any).google?.accounts?.oauth2 && !tokenClientRef.current) {
-        tokenClientRef.current = (window as any).google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/tasks.readonly https://www.googleapis.com/auth/calendar.readonly',
-          callback: (tokenRes: any) => {
-            setIsAuthorizingEcosystem(false);
-            if (tokenRes.access_token) {
-              setAccessToken(tokenRes.access_token);
-              sessionStorage.setItem('js_access_token', tokenRes.access_token);
-            }
-          },
-        });
-        if (user && !accessToken) requestEcosystemAccess(true);
+        // Init OAuth Token Client
+        if (!tokenClientRef.current) {
+          tokenClientRef.current = g.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/tasks.readonly https://www.googleapis.com/auth/calendar.readonly',
+            callback: (tokenRes: any) => {
+              setIsAuthorizingEcosystem(false);
+              if (tokenRes.access_token) {
+                setAccessToken(tokenRes.access_token);
+                sessionStorage.setItem('js_access_token', tokenRes.access_token);
+              }
+            },
+          });
+          if (user && !accessToken) requestEcosystemAccess(true);
+        }
+        return true;
       }
+      return false;
     };
 
-    const intervalId = setInterval(() => {
-      if ((window as any).google?.accounts?.id && (window as any).google?.accounts?.oauth2) {
-        initSSO();
-        clearInterval(intervalId);
-      }
-    }, 100);
-
-    return () => clearInterval(intervalId);
-  }, [GOOGLE_CLIENT_ID, handleGoogleResponse, darkMode, user, accessToken, requestEcosystemAccess]);
+    if (!checkGsiReady()) {
+      const interval = setInterval(() => {
+        if (checkGsiReady()) clearInterval(interval);
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [darkMode, handleGoogleResponse, user, accessToken, requestEcosystemAccess]);
 
   useEffect(() => {
     const checkKey = async () => {
@@ -201,8 +202,8 @@ const App: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-12 max-w-lg w-full shadow-2xl text-center border border-transparent dark:border-slate-800 transition-colors">
           <Logo className="mb-10" />
           <h1 className="text-2xl font-black text-[#044A8D] dark:text-white mb-4 uppercase tracking-tighter text-center">Security Protocol Required</h1>
-          <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm font-bold leading-relaxed text-center">
-            Portal initialization requires a verified AI Project Key to enable bank-wide search and intelligence protocols.
+          <p className="text-slate-700 dark:text-slate-300 mb-8 text-sm font-bold leading-relaxed text-center">
+            Portal initialization requires a verified AI Project Key to enable bank-wide intelligence protocols.
           </p>
           <button 
             onClick={handleKeySelection}
@@ -223,7 +224,7 @@ const App: React.FC = () => {
           <div className="mb-10">
             <Logo className="mb-8" />
             <h1 className="text-3xl font-black text-[#044A8D] dark:text-white mb-1 text-center">JS Intranet Portal</h1>
-            <p className="text-[#FAB51D] font-black uppercase tracking-[0.3em] text-[9px] text-center">Corporate Access Control</p>
+            <p className="text-[#EF7A25] font-black uppercase tracking-[0.3em] text-[9px] text-center">Corporate Access Control</p>
           </div>
           <div className="flex flex-col items-center space-y-6">
             <div id="google-signin-btn" className="min-h-[50px]"></div>
@@ -232,7 +233,7 @@ const App: React.FC = () => {
                 {authError}
               </div>
             )}
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed font-bold uppercase tracking-widest opacity-60">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed font-bold uppercase tracking-widest text-center">
               Employee Single Sign-On • Domain Restricted
             </p>
           </div>
