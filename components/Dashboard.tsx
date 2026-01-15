@@ -81,73 +81,73 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
     return () => clearInterval(timer);
   }, [accessToken]);
 
-  const cardBase = "bg-white dark:bg-[#1E293B] rounded-[1.5rem] border border-slate-200/40 dark:border-slate-800/50 shadow-sm flex flex-col overflow-hidden";
+  const cardBase = "bg-white dark:bg-[#1E293B] rounded-[1.5rem] border border-slate-200/40 dark:border-slate-800/50 shadow-sm flex flex-col overflow-hidden transition-all duration-300";
 
   return (
     <div className="space-y-4 max-w-[1100px] mx-auto animate-fadeIn">
-      <div className="flex justify-between items-center px-2">
+      <div className="flex justify-between items-center px-2 mb-2">
         <div>
-          <h1 className="text-2xl font-black text-[#044A8D] dark:text-white">Assalamu Alaikum, {user.name.split(' ')[0]}</h1>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Operational Workspace Control</p>
+          <h1 className="text-xl font-black text-[#044A8D] dark:text-white">Assalamu Alaikum, {user.name.split(' ')[0]}</h1>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Operational Workspace Control</p>
         </div>
-        <div className="bg-white dark:bg-slate-900 px-4 py-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-          <p className="text-sm font-black tabular-nums text-slate-900 dark:text-white">{time}</p>
+        <div className="bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+          <p className="text-xs font-black tabular-nums text-slate-900 dark:text-white">{time}</p>
         </div>
       </div>
 
       {!accessToken ? (
-        <div className={`${cardBase} h-40 items-center justify-center p-6 bg-slate-50/50 border-dashed`}>
-          <button onClick={onSyncRequest} className="px-8 py-2.5 bg-[#044A8D] text-white font-black rounded-xl uppercase tracking-widest text-[10px] active:scale-95 transition-all">Enable Gmail & Calendar Hub</button>
+        <div className={`${cardBase} h-32 items-center justify-center p-6 bg-slate-50/50 border-dashed`}>
+          <button onClick={onSyncRequest} className="px-6 py-2 bg-[#044A8D] text-white font-black rounded-xl uppercase tracking-widest text-[9px] active:scale-95 transition-all">Enable Gmail & Calendar Hub</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-2">
-          {/* Gmail Card */}
-          <div className={`${cardBase} lg:col-span-7 h-[420px]`}>
-            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-              <h2 className="text-[10px] font-black uppercase tracking-widest text-[#044A8D] dark:text-blue-400">Gmail</h2>
+          {/* Gmail Card - Reduced height from 420px to 320px */}
+          <div className={`${cardBase} lg:col-span-7 h-[320px]`}>
+            <div className="px-4 py-2.5 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <h2 className="text-[9px] font-black uppercase tracking-widest text-[#044A8D] dark:text-blue-400">Gmail</h2>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scroll">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scroll">
               {loading ? (
-                <div className="h-full flex items-center justify-center"><div className="w-5 h-5 border-2 border-slate-200 border-t-[#044A8D] rounded-full animate-spin"></div></div>
+                <div className="h-full flex items-center justify-center"><div className="w-4 h-4 border-2 border-slate-200 border-t-[#044A8D] rounded-full animate-spin"></div></div>
               ) : emails.length > 0 ? (
                 emails.map(e => (
-                  <div key={e.id} className="p-3 bg-white dark:bg-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl transition-colors cursor-pointer">
-                    <div className="flex justify-between mb-0.5"><span className="text-[9px] font-black text-[#044A8D] dark:text-[#FAB51D]">{e.from}</span><span className="text-[8px] font-bold text-slate-400">{e.date}</span></div>
-                    <h3 className="text-[11px] font-bold truncate text-slate-900 dark:text-white">{e.subject}</h3>
-                    <p className="text-[10px] text-slate-400 line-clamp-1 italic">{e.snippet}</p>
+                  <div key={e.id} className="p-2.5 bg-white dark:bg-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl transition-colors cursor-pointer">
+                    <div className="flex justify-between mb-0.5"><span className="text-[8px] font-black text-[#044A8D] dark:text-[#FAB51D]">{e.from}</span><span className="text-[7px] font-bold text-slate-400">{e.date}</span></div>
+                    <h3 className="text-[10px] font-bold truncate text-slate-900 dark:text-white">{e.subject}</h3>
+                    <p className="text-[9px] text-slate-400 line-clamp-1 italic">{e.snippet}</p>
                   </div>
                 ))
-              ) : <div className="py-20 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">Inbox Zero</div>}
+              ) : <div className="py-16 text-center text-[9px] font-black text-slate-300 uppercase tracking-widest">Inbox Zero</div>}
             </div>
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-center">
-              <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" className="text-[9px] font-black uppercase text-[#044A8D] dark:text-blue-400 hover:underline">Launch Gmail Dashboard</a>
+            <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-center">
+              <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" className="text-[8px] font-black uppercase text-[#044A8D] dark:text-blue-400 hover:underline">Launch Gmail Dashboard</a>
             </div>
           </div>
 
-          {/* Today's Agenda Card */}
-          <div className={`${cardBase} lg:col-span-5 h-[420px]`}>
-            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-              <h2 className="text-[10px] font-black uppercase tracking-widest text-[#044A8D] dark:text-blue-400">Today's Agenda</h2>
+          {/* Today's Agenda Card - Reduced height from 420px to 320px */}
+          <div className={`${cardBase} lg:col-span-5 h-[320px]`}>
+            <div className="px-4 py-2.5 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <h2 className="text-[9px] font-black uppercase tracking-widest text-[#044A8D] dark:text-blue-400">Today's Agenda</h2>
             </div>
-            <div className="flex-1 p-5 space-y-4 overflow-y-auto custom-scroll">
+            <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scroll">
               {loading ? (
-                <div className="h-full flex items-center justify-center"><div className="w-5 h-5 border-2 border-slate-200 border-t-[#044A8D] rounded-full animate-spin"></div></div>
+                <div className="h-full flex items-center justify-center"><div className="w-4 h-4 border-2 border-slate-200 border-t-[#044A8D] rounded-full animate-spin"></div></div>
               ) : calendarEvents.length > 0 ? (
-                <div className="border-l-2 border-slate-100 dark:border-slate-800 ml-1 space-y-4">
+                <div className="border-l-2 border-slate-100 dark:border-slate-800 ml-1 space-y-3">
                   {calendarEvents.map(ev => (
-                    <div key={ev.id} className="relative pl-4 group">
+                    <div key={ev.id} className="relative pl-3 group">
                       <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#EF7A25]"></div>
-                      <span className="text-[8px] font-black text-[#044A8D] dark:text-blue-300 uppercase tracking-tighter">
+                      <span className="text-[7px] font-black text-[#044A8D] dark:text-blue-300 uppercase tracking-tighter">
                         {ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'All Day'}
                       </span>
-                      <h4 className="text-[11px] font-bold truncate text-slate-900 dark:text-white group-hover:text-[#EF7A25] transition-colors">{ev.summary}</h4>
+                      <h4 className="text-[10px] font-bold truncate text-slate-900 dark:text-white group-hover:text-[#EF7A25] transition-colors">{ev.summary}</h4>
                     </div>
                   ))}
                 </div>
-              ) : <div className="py-20 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">No Events Scheduled</div>}
+              ) : <div className="py-16 text-center text-[9px] font-black text-slate-300 uppercase tracking-widest">No Events Scheduled</div>}
             </div>
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-center">
-              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-[9px] font-black uppercase text-[#044A8D] dark:text-blue-400 hover:underline">Open Full Schedule</a>
+            <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-center">
+              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-[8px] font-black uppercase text-[#044A8D] dark:text-blue-400 hover:underline">Open Full Schedule</a>
             </div>
           </div>
         </div>

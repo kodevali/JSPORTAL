@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import News from './components/News';
 import Downloads from './components/Downloads';
 import Tickets from './components/Tickets';
+import CMS from './components/CMS';
 import Logo from './components/Logo';
 
 declare global {
@@ -196,6 +197,7 @@ const App: React.FC = () => {
           {activeTab === 'news' && <News />}
           {activeTab === 'downloads' && <Downloads userRole={user.role} />}
           {activeTab === 'tickets' && <Tickets user={user} />}
+          {activeTab === 'cms' && <CMS user={user} />}
         </div>
       </main>
     </div>

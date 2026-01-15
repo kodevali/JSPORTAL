@@ -1,8 +1,16 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MOCK_NEWS } from '../constants';
+import { NewsCard } from '../types';
 
 const News: React.FC = () => {
+  const [news, setNews] = useState<NewsCard[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('js_portal_news');
+    setNews(saved ? JSON.parse(saved) : MOCK_NEWS);
+  }, []);
+
   return (
     <div className="space-y-6 animate-fadeIn pb-10">
       <div className="flex items-center justify-between px-2">
@@ -13,7 +21,7 @@ const News: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
-        {MOCK_NEWS.map((item, idx) => (
+        {news.map((item, idx) => (
           <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col hover:shadow-lg transition-all">
             <div className="relative h-40 overflow-hidden">
               <img src={item.image} alt={item.title} className="w-full h-full object-cover"/>
