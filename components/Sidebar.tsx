@@ -12,7 +12,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, darkMode, toggleDarkMode }) => {
-  const isAuthorized = role === UserRole.IT || role === UserRole.MANAGER;
+  const isManager = role === UserRole.IT || role === UserRole.MANAGER;
+  const isIT = role === UserRole.IT;
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -21,8 +22,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, darkMo
     { id: 'tickets', label: 'Support', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
   ];
 
-  if (isAuthorized) {
+  if (isManager) {
     tabs.push({ id: 'cms', label: 'CMS Studio', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' });
+  }
+
+  if (isIT) {
+    tabs.push({ id: 'user-admin', label: 'User Admin', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' });
   }
 
   return (

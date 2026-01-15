@@ -7,6 +7,7 @@ import News from './components/News';
 import Downloads from './components/Downloads';
 import Tickets from './components/Tickets';
 import CMS from './components/CMS';
+import UserAdmin from './components/UserAdmin';
 import Logo from './components/Logo';
 
 declare global {
@@ -64,18 +65,27 @@ const App: React.FC = () => {
       
       if (profile && profile.email) {
         const email = profile.email.toLowerCase();
-        let assignedRole: UserRole = UserRole.USER;
         
-        // Role assignment logic updated to include arsalan.mazhar@jsbl.com
-        if (
-          email.includes('admin') || 
-          email === 'kodev.ali@jsbl.com' || 
-          email === 'arsalan.mazhar@jsbl.com' ||
-          email.includes('ali')
-        ) {
+        // Dynamic role resolution from registry
+        const registryRaw = localStorage.getItem('js_portal_user_registry');
+        const registry = registryRaw ? JSON.parse(registryRaw) : [];
+        const entry = registry.find((u: any) => u.email === email);
+        
+        let assignedRole: UserRole = entry ? entry.role : UserRole.USER;
+        
+        // Fallback hardcoded for initial admin bootstrap if registry is empty
+        if (!entry && (email.includes('admin') || email === 'kodev.ali@jsbl.com' || email === 'arsalan.mazhar@jsbl.com')) {
           assignedRole = UserRole.IT;
-        } else if (email.includes('manager')) {
-          assignedRole = UserRole.MANAGER;
+        }
+
+        // Update name in registry if found
+        if (entry && !entry.name) {
+          entry.name = profile.name;
+          localStorage.setItem('js_portal_user_registry', JSON.stringify(registry));
+        } else if (!entry) {
+          // Auto-register first time users as USER
+          const newRegistry = [...registry, { email, role: assignedRole, name: profile.name }];
+          localStorage.setItem('js_portal_user_registry', JSON.stringify(newRegistry));
         }
 
         const newUser: User = {
@@ -204,6 +214,7 @@ const App: React.FC = () => {
           {activeTab === 'downloads' && <Downloads userRole={user.role} />}
           {activeTab === 'tickets' && <Tickets user={user} />}
           {activeTab === 'cms' && <CMS user={user} />}
+          {activeTab === 'user-admin' && <UserAdmin />}
         </div>
       </main>
     </div>
