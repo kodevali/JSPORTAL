@@ -21,65 +21,43 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, role, darkMo
 
   return (
     <div className="fixed left-6 top-6 bottom-6 w-20 lg:w-64 z-50 transition-all duration-500">
-      <div className="h-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden">
-        {/* Header/Logo */}
+      <div className="h-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 rounded-[2.5rem] shadow-xl flex flex-col overflow-hidden">
         <div className="p-6 flex flex-col items-center border-b border-slate-100 dark:border-slate-800">
           <Logo className="scale-75 lg:scale-100" />
           <div className="hidden lg:flex flex-col items-center mt-2">
             <div className="h-1 w-8 bg-[#EF7A25] rounded-full"></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#044A8D] dark:text-blue-400 mt-2">Executive</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#044A8D] mt-2">Executive</span>
           </div>
         </div>
         
-        {/* Navigation */}
         <nav className="flex-1 px-4 py-8 space-y-3 overflow-y-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center justify-center lg:justify-start lg:space-x-4 px-4 py-4 rounded-2xl transition-all duration-300 group relative ${
+              className={`w-full flex items-center justify-center lg:justify-start lg:space-x-4 px-4 py-4 rounded-2xl transition-all duration-300 group ${
                 activeTab === tab.id 
-                  ? 'bg-[#044A8D] text-white shadow-xl shadow-[#044A8D]/20 translate-x-1' 
-                  : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400'
+                  ? 'bg-[#044A8D] text-white shadow-lg' 
+                  : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <div className="relative">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={tab.icon} />
-                </svg>
-                {activeTab === tab.id && (
-                  <span className="absolute -right-1 -top-1 w-2 h-2 bg-[#EF7A25] rounded-full border-2 border-[#044A8D]"></span>
-                )}
-              </div>
-              <span className="hidden lg:block font-bold text-sm tracking-tight">{tab.label}</span>
-              
-              {/* Tooltip for mobile view */}
-              <div className="lg:hidden absolute left-full ml-4 px-3 py-1 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl">
-                {tab.label}
-              </div>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={tab.icon} />
+              </svg>
+              <span className="hidden lg:block font-bold text-sm">{tab.label}</span>
             </button>
           ))}
         </nav>
         
-        {/* Footer Actions */}
         <div className="p-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
           <button 
             onClick={toggleDarkMode}
-            className="w-full aspect-square lg:aspect-auto lg:h-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-2xl transition-colors hover:bg-[#FAB51D]/10"
+            className="w-full flex items-center justify-center h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl"
           >
-            <svg className={`w-5 h-5 transition-transform duration-500 ${darkMode ? 'rotate-180 text-[#FAB51D]' : 'text-slate-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-5 h-5 ${darkMode ? 'text-[#FAB51D]' : 'text-slate-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
-            <span className="hidden lg:block ml-3 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Appearance</span>
           </button>
-          
-          <div className="hidden lg:block bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800">
-            <div className="flex items-center space-x-2 mb-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Clearance</span>
-            </div>
-            <p className="text-[11px] font-black text-slate-900 dark:text-white truncate">{role.replace('_', ' ')}</p>
-          </div>
         </div>
       </div>
     </div>
