@@ -67,7 +67,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
         });
         const calData = await calRes.json();
         if (calData.items) {
-          // Fix: cast calData.items and callback parameter to any to resolve 'unknown' type error on 'summary' property
           setCalendarEvents(deduplicate(calData.items as any[], (c: any) => c.summary || 'e').slice(0, 5));
         }
       } catch (err) {
@@ -92,62 +91,63 @@ const Dashboard: React.FC<DashboardProps> = ({ user, accessToken, isAuthorizing,
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Operational Workspace Control</p>
         </div>
         <div className="bg-white dark:bg-slate-900 px-4 py-2 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-          <p className="text-sm font-black tabular-nums">{time}</p>
+          <p className="text-sm font-black tabular-nums text-slate-900 dark:text-white">{time}</p>
         </div>
       </div>
 
       {!accessToken ? (
         <div className={`${cardBase} h-40 items-center justify-center p-6 bg-slate-50/50 border-dashed`}>
-          <button onClick={onSyncRequest} className="px-8 py-2.5 bg-[#044A8D] text-white font-black rounded-xl uppercase tracking-widest text-[10px]">Enable Gmail & Calendar Hub</button>
+          <button onClick={onSyncRequest} className="px-8 py-2.5 bg-[#044A8D] text-white font-black rounded-xl uppercase tracking-widest text-[10px] active:scale-95 transition-all">Enable Gmail & Calendar Hub</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-2">
           {/* Gmail Card */}
           <div className={`${cardBase} lg:col-span-7 h-[420px]`}>
-            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50">
-              <h2 className="text-[10px] font-black uppercase tracking-widest text-[#044A8D]">Gmail</h2>
-              <span className="text-[8px] font-black text-slate-400">RESTRICTED ACCESS</span>
+            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <h2 className="text-[10px] font-black uppercase tracking-widest text-[#044A8D] dark:text-blue-400">Gmail</h2>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scroll">
               {loading ? (
                 <div className="h-full flex items-center justify-center"><div className="w-5 h-5 border-2 border-slate-200 border-t-[#044A8D] rounded-full animate-spin"></div></div>
               ) : emails.length > 0 ? (
                 emails.map(e => (
-                  <div key={e.id} className="p-3 bg-white dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-xl">
-                    <div className="flex justify-between mb-0.5"><span className="text-[9px] font-black text-[#044A8D]">{e.from}</span><span className="text-[8px] font-bold text-slate-400">{e.date}</span></div>
-                    <h3 className="text-[11px] font-bold truncate">{e.subject}</h3>
+                  <div key={e.id} className="p-3 bg-white dark:bg-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl transition-colors cursor-pointer">
+                    <div className="flex justify-between mb-0.5"><span className="text-[9px] font-black text-[#044A8D] dark:text-[#FAB51D]">{e.from}</span><span className="text-[8px] font-bold text-slate-400">{e.date}</span></div>
+                    <h3 className="text-[11px] font-bold truncate text-slate-900 dark:text-white">{e.subject}</h3>
                     <p className="text-[10px] text-slate-400 line-clamp-1 italic">{e.snippet}</p>
                   </div>
                 ))
-              ) : <div className="py-20 text-center text-[10px] font-black text-slate-300 uppercase">Inbox Zero</div>}
+              ) : <div className="py-20 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">Inbox Zero</div>}
             </div>
-            <div className="p-3 border-t border-slate-100 bg-slate-50/30 text-center">
-              <a href="https://mail.google.com" target="_blank" className="text-[9px] font-black uppercase text-[#044A8D] hover:underline">Launch Gmail Dashboard</a>
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-center">
+              <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" className="text-[9px] font-black uppercase text-[#044A8D] dark:text-blue-400 hover:underline">Launch Gmail Dashboard</a>
             </div>
           </div>
 
           {/* Today's Agenda Card */}
-          <div className={`${cardBase} lg:col-span-5 h-[420px] bg-[#044A8D] text-white border-none`}>
-            <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-[10px] font-black uppercase tracking-widest">Today's Agenda</h2>
+          <div className={`${cardBase} lg:col-span-5 h-[420px]`}>
+            <div className="px-5 py-3 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+              <h2 className="text-[10px] font-black uppercase tracking-widest text-[#044A8D] dark:text-blue-400">Today's Agenda</h2>
             </div>
-            <div className="flex-1 p-5 space-y-4">
+            <div className="flex-1 p-5 space-y-4 overflow-y-auto custom-scroll">
               {loading ? (
-                <div className="h-full flex items-center justify-center"><div className="w-5 h-5 border-2 border-white/10 border-t-white rounded-full animate-spin"></div></div>
+                <div className="h-full flex items-center justify-center"><div className="w-5 h-5 border-2 border-slate-200 border-t-[#044A8D] rounded-full animate-spin"></div></div>
               ) : calendarEvents.length > 0 ? (
-                <div className="border-l border-white/10 ml-1 space-y-4">
+                <div className="border-l-2 border-slate-100 dark:border-slate-800 ml-1 space-y-4">
                   {calendarEvents.map(ev => (
-                    <div key={ev.id} className="relative pl-4">
-                      <div className="absolute -left-[3.5px] top-1 w-1.5 h-1.5 rounded-full bg-[#FAB51D]"></div>
-                      <span className="text-[8px] font-black text-blue-200 uppercase">{ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'All Day'}</span>
-                      <h4 className="text-[11px] font-bold truncate">{ev.summary}</h4>
+                    <div key={ev.id} className="relative pl-4 group">
+                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#EF7A25]"></div>
+                      <span className="text-[8px] font-black text-[#044A8D] dark:text-blue-300 uppercase tracking-tighter">
+                        {ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'All Day'}
+                      </span>
+                      <h4 className="text-[11px] font-bold truncate text-slate-900 dark:text-white group-hover:text-[#EF7A25] transition-colors">{ev.summary}</h4>
                     </div>
                   ))}
                 </div>
-              ) : <div className="py-20 text-center text-[10px] font-black opacity-30 uppercase">No Events Scheduled</div>}
+              ) : <div className="py-20 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">No Events Scheduled</div>}
             </div>
-            <div className="p-3 border-t border-white/10 bg-white/5 text-center">
-              <a href="https://calendar.google.com" target="_blank" className="text-[9px] font-black uppercase text-white hover:text-[#FAB51D]">Open Full Schedule</a>
+            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-center">
+              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-[9px] font-black uppercase text-[#044A8D] dark:text-blue-400 hover:underline">Open Full Schedule</a>
             </div>
           </div>
         </div>
