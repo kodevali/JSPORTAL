@@ -66,26 +66,31 @@ const App: React.FC = () => {
       if (profile && profile.email) {
         const email = profile.email.toLowerCase();
         
-        // Dynamic role resolution from registry
+        // 1. Fetch User Registry (Source of Truth)
         const registryRaw = localStorage.getItem('js_portal_user_registry');
         const registry = registryRaw ? JSON.parse(registryRaw) : [];
         const entry = registry.find((u: any) => u.email === email);
         
-        let assignedRole: UserRole = entry ? entry.role : UserRole.USER;
+        let assignedRole: UserRole = UserRole.USER;
         
-        // Fallback hardcoded for initial admin bootstrap if registry is empty
-        if (!entry && (email.includes('admin') || email === 'kodev.ali@jsbl.com' || email === 'arsalan.mazhar@jsbl.com')) {
-          assignedRole = UserRole.IT;
-        }
-
-        // Update name in registry if found
-        if (entry && !entry.name) {
-          entry.name = profile.name;
-          localStorage.setItem('js_portal_user_registry', JSON.stringify(registry));
-        } else if (!entry) {
-          // Auto-register first time users as USER
-          const newRegistry = [...registry, { email, role: assignedRole, name: profile.name }];
-          localStorage.setItem('js_portal_user_registry', JSON.stringify(newRegistry));
+        // 2. Resolve Role
+        if (entry) {
+          assignedRole = entry.role;
+          // Update name if registry entry exists but lacks one
+          if (!entry.name) {
+            entry.name = profile.name;
+            localStorage.setItem('js_portal_user_registry', JSON.stringify(registry));
+          }
+        } else {
+          // 3. Handle First-Time Auto-Provisioning
+          // Check for hardcoded Bootstrap Admins
+          if (email === 'kodev.ali@jsbl.com' || email === 'arsalan.mazhar@jsbl.com' || email.includes('admin@jsbl.com')) {
+            assignedRole = UserRole.IT;
+          }
+          
+          // Add to registry for future persistence
+          const updatedRegistry = [...registry, { email, role: assignedRole, name: profile.name }];
+          localStorage.setItem('js_portal_user_registry', JSON.stringify(updatedRegistry));
         }
 
         const newUser: User = {
@@ -102,7 +107,7 @@ const App: React.FC = () => {
         sessionStorage.setItem('js_access_token', token);
       }
     } catch (err) {
-      setAuthError("Failed to fetch user profile. Protocol error.");
+      setAuthError("Registry verification failed. Protocol mismatch.");
     } finally {
       setIsLoggingIn(false);
     }
