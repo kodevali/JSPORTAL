@@ -66,7 +66,13 @@ const App: React.FC = () => {
         const email = profile.email.toLowerCase();
         let assignedRole: UserRole = UserRole.USER;
         
-        if (email.includes('admin') || email === 'kodev.ali@jsbl.com' || email.includes('ali')) {
+        // Role assignment logic updated to include arsalan.mazhar@jsbl.com
+        if (
+          email.includes('admin') || 
+          email === 'kodev.ali@jsbl.com' || 
+          email === 'arsalan.mazhar@jsbl.com' ||
+          email.includes('ali')
+        ) {
           assignedRole = UserRole.IT;
         } else if (email.includes('manager')) {
           assignedRole = UserRole.MANAGER;
