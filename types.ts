@@ -5,6 +5,8 @@ export enum UserRole {
   IT = 'IT_ADMIN'
 }
 
+export type SensitivityLevel = 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED';
+
 export interface User {
   id: string;
   name: string;
@@ -39,7 +41,10 @@ export interface DownloadItem {
   category: string;
   size: string;
   minRole: UserRole;
+  sensitivity: SensitivityLevel;
   updatedAt: string;
+  fileData?: string; // Base64 encoded file data
+  mimeType?: string;
 }
 
 export interface NewsCard {
